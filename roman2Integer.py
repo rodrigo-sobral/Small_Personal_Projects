@@ -28,7 +28,7 @@ def converter(roman):
 
 if __name__ == "__main__": 
     while True:
-        roman = str(input('Insira um valor Romano: '))  
+        roman = str(input('Insert a Roman value: '))  
         integer=converter(roman)
         if integer!=0: 
             print("{} converts into {}".format(roman, integer))
