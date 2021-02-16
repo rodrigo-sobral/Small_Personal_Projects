@@ -1,6 +1,19 @@
-# Roman2Integer
- A converter from roman numeration to decimal numeration
+# Small Personal Projects
 
-`Important Notes`: 
-- only converts numbers from 1 to 4999
-- numbers higher than 4999 have a specific symbology
+___ 
+
+*To be done...*
+___
+
+### **Contributors** :sparkles:
+
+<html><i><b>@2021</b></i></html>
+
+***[Rodrigo Fernando Henriques Sobral](https://github.com/RodrigoSobral2000)***
+
+___
+
+## License :link:
+Have a look at the [license file](LICENSE) for details
+
+___
