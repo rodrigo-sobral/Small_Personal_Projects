@@ -1,158 +1,113 @@
 from random import random
 from tkinter import * 
-import turtle
+from tkinter import messagebox
+from turtle import *
 
-n_min=1
-n_max=10
-v_max=25
-chegou=400
+window = Tk(className=' Make Your Bet') 
+turtlescreen= None
+SCREEN_WIDTH= 1420
+SCREEN_HEIGHT= 720
+
+GOAL_MARK_X= 550
+GOAL_MARK_Y= 300
+SQUARE_SIZE= 15
+TURTLES_START_X= -450
+TURTLES_START_Y= 250
+MAX_TURTLE_SPEED= 25
+
+turtle_selected= 0
+turtles_colors= ["black", "green", "blue", "red", "orange", "brown", "grey", "purple", "pink", "dark blue", "dark green"]
+
+def goTo(turtle, toX: int, toY: int):
+    turtle.pu()
+    turtle.goto(toX, toY)
+    turtle.pd()
+
+def drawSquare(goal_mark_turtle, size, color):
+    goal_mark_turtle.begin_fill()
+    goal_mark_turtle.fillcolor(color)
+    for q in range(4):
+        goal_mark_turtle.fd(size)
+        goal_mark_turtle.left(90)
+    goal_mark_turtle.end_fill()
 
 def drawScene():
-    turtle.bgcolor("grey")
-    meta= turtle.Turtle()
-    meta.speed(0)
-    x=chegou
-    y=265
-    lado_quadrado=15
-    def quadrado_preto(meta):
-        meta.begin_fill()
-        meta.fillcolor("black")
-        for q in range(4):
-            meta.fd(lado_quadrado)
-            meta.left(90)
-        meta.end_fill()
-    def quadrado_branco(meta):
-        meta.begin_fill()
-        meta.fillcolor("white")
-        for q in range(4):
-            meta.fd(lado_quadrado)
-            meta.left(90)
-        meta.end_fill()    
+    bgcolor("grey")
+    turtlescreen= Screen()
+    turtlescreen.setup(SCREEN_WIDTH, SCREEN_HEIGHT)
+    turtlescreen.title('Turtles Race by Rodrigo Sobral')
+    goal_mark_turtle= Turtle()
+    goal_mark_turtle.speed(0)
+    goal_mark_turtle.hideturtle()
+    x= GOAL_MARK_X
+    y= GOAL_MARK_Y
 
-    #DESENHAR META--------------------
-    meta.pensize(1)
-    meta.pencolor("black")
-    meta._rotate(270)
-    for j in range(20):
-        meta.pu()
-        meta.goto(x,y)
-        meta.pd()
-        quadrado_preto(meta)
-        y-=lado_quadrado
-        meta.pu()
-        meta.goto(x,y)
-        meta.pd()
-        quadrado_branco(meta)
-        y-=lado_quadrado
-    y=265
-    x+=lado_quadrado
-    for j in range(20):
-        meta.pu()
-        meta.goto(x,y)
-        meta.pd()
-        quadrado_branco(meta)
-        y-=lado_quadrado
-        meta.pu()
-        meta.goto(x,y)
-        meta.pd()
-        quadrado_preto(meta)
-        y-=lado_quadrado
-    meta.hideturtle()
-
-def drawTurtles(cavalos, MAX_CAVALOS):
-    x=-550
-    y=200
-    for i in range(MAX_CAVALOS):
-        cavalos[i].pu()
-        cavalos[i].goto(x,y)
-        cavalos[i].pd()
-        cavalos[i].speed(0)
+    goal_mark_turtle.pensize(1)
+    goal_mark_turtle.pencolor("black")
+    goal_mark_turtle._rotate(270)
+    for i in range(40):
+        goTo(goal_mark_turtle, x, y)
+        if i<20: drawSquare(goal_mark_turtle, SQUARE_SIZE, 'black')
+        else: drawSquare(goal_mark_turtle, SQUARE_SIZE, 'white')
+        y-=SQUARE_SIZE
+        goTo(goal_mark_turtle, x, y)
+        if i<20: drawSquare(goal_mark_turtle, SQUARE_SIZE, 'white')
+        else: drawSquare(goal_mark_turtle, SQUARE_SIZE, 'black')
+        y-=SQUARE_SIZE
+        if i==19:
+            y=GOAL_MARK_Y
+            x+=SQUARE_SIZE
+    
+def drawTurtles():
+    y= TURTLES_START_Y
+    turtles=[]
+    for color in turtles_colors:
+        runner_turtle= Turtle()
+        runner_turtle.speed(0)
+        goTo(runner_turtle, TURTLES_START_X, y)
+        runner_turtle.shape('turtle')
+        runner_turtle.pencolor(color)
         y-=40
-        
-def correr(cavalos, MAX_CAVALOS, cores):
-    while True: 
-        aposta= int(input("Em que cavalo irá apostar? => "))
-        if (aposta<=MAX_CAVALOS and aposta>0): break
-    print("\n\tGO!!!\n")
+        turtles.append(runner_turtle)
+    return turtles
+
+def startRace(turtles):
     while True:
-        velocidade= v_max*random()
-        cavalos[0].fd(velocidade)
-        if (cavalos[0].xcor()>=chegou):
-            vencedor=0
-            break
-        velocidade= v_max*random()
-        cavalos[1].fd(velocidade)
-        if (cavalos[1].xcor()>=chegou):
-            vencedor=1
-            break
-        velocidade= v_max*random()
-        cavalos[2].fd(velocidade)
-        if (cavalos[2].xcor()>=chegou):
-            vencedor=2
-            break
-        velocidade= v_max*random()
-        cavalos[3].fd(velocidade)
-        if (cavalos[3].xcor()>=chegou):
-            vencedor=3
-            break
-        velocidade= v_max*random()
-        cavalos[4].fd(velocidade)
-        if (cavalos[4].xcor()>=chegou):
-            vencedor=4
-            break
-        velocidade= v_max*random()
-        cavalos[5].fd(velocidade)
-        if (cavalos[5].xcor()>=chegou):
-            vencedor=5
-            break
-        velocidade= v_max*random()
-        cavalos[6].fd(velocidade)
-        if (cavalos[6].xcor()>=chegou):
-            vencedor=6
-            break
-        velocidade= v_max*random()
-        cavalos[7].fd(velocidade)
-        if (cavalos[7].xcor()>=chegou):
-            vencedor=7
-            break
-        velocidade= v_max*random()
-        cavalos[8].fd(velocidade)
-        if (cavalos[8].xcor()>=chegou):
-            vencedor=8
-            break
-        velocidade= v_max*random()
-        cavalos[9].fd(velocidade)
-        if (cavalos[9].xcor()>=chegou):
-            vencedor=9
-            break
-        velocidade= v_max*random()
-        cavalos[10].fd(velocidade)
-        if (cavalos[10].xcor()>=chegou):
-            vencedor=10
-            break
-        
-    if (vencedor+1==aposta):
-        print("PARABÉNS!!! O CAVALO EM QUE APOSTOU GANHOU A CORRIDA!!!\n\n")
-    else:
-        print("PERDEU A SUA APOSTA!!! O CAVALO VENCEDOR FOI O CAVALO", cores[vencedor],"!!!\n\n")
+        for runner in turtles:
+            speed= random()*MAX_TURTLE_SPEED
+            runner.fd(speed)
+            if runner.xcor() >= GOAL_MARK_X-SQUARE_SIZE*2: return runner.pencolor()
+
+def alertWinner(winner, turtle_selected):
+    if winner==turtle_selected: messagebox.showinfo("Congratulations! Your {} Turtle won the race!")
+    else: messagebox.showerror("")
+
+def confirmBet(event):
+    selection = event.widget.curselection()
+    if selection:
+        turtle_selected = event.widget.get(selection[0])
+        confirmation = messagebox.askyesno(title='Confirmation', message='Do you want to confirm your bet in {} Turtle'.format(turtle_selected))
+        if confirmation: 
+            window.destroy()
+            drawScene()
+            turtles= drawTurtles()
+            winner= startRace(turtles)
+            turtlescreen.bye()
+            alertWinner(winner, turtle_selected)
 
 def makebet():
-    bet=0
-    turtles=["black", "green", "blue", "red", "orange", "brown", "yellow", "purple", "pink", "dark blue", "dark green"]
-    window = Tk() 
+    window.geometry('500x230+350+250')
     yscrollbar = Scrollbar(window) 
     yscrollbar.pack(side = RIGHT, fill = Y) 
     bet_list = Listbox(window, selectmode='unique', yscrollcommand = yscrollbar.set) 
     bet_list.pack(padx = 10, pady = 10, expand = YES, fill = "both") 
-    for each_item in range(len(turtles)):
-        bet_list.insert(END, turtles[each_item]) 
-        bet_list.itemconfig(each_item, bg = "light grey" if each_item % 2 == 0 else "white") 
+    for color in range(len(turtles_colors)):
+        bet_list.insert(END, turtles_colors[color]) 
+        bet_list.itemconfig(color, bg = turtles_colors[color], fg='white') 
+    bet_list.bind("<<ListboxSelect>>", confirmBet)
     window.mainloop() 
 
 
 if __name__=="__main__":
-    #drawScene()
-    #drawTurtles()
     makebet()
-
-  
+ 

@@ -129,5 +129,6 @@ def getMouseClickCoor(x, y):
 if __name__ == "__main__":
     initPlayersTurtle()
     drawGrid()
+    turtle.Screen().title("Rooster Game by Rodrigo Sobral")
     turtle.onscreenclick(getMouseClickCoor)      
     turtle.mainloop()    
