@@ -1,0 +1,11 @@
+Animals
+snake|dog|cat|horse|lion|tiger|eagle|parakeet|leopard|bear|bee|cockroach|monkey|gorilla
+
+Jobs
+teacer|doctor|mechanic|programmer|nurse|cop|fireman|student|writer|painter|singer|musician
+
+Cars Brands
+porche|ferrari|audi|bmw|range rover|volkswagen|mazda|volvo|peugeot|renault|opel|tesla|smart
+
+Video Games
+doom|cs go|rocket league|terraria|fortnite|minecraft|forza horizon|asphalt|world of tanks|subnautica|cyberpunk 2077|super mario|sonic
