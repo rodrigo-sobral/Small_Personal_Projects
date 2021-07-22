@@ -24,7 +24,11 @@ def converter(integer):
 if __name__ == "__main__": 
     while True:
         try:
-            integer = int(input('Insert an Integer: '))  
+            integer = input('Insert an Integer: ')
+            if integer.isdecimal(): integer= int(integer)
+            else: 
+                print('Insert a valid Integer')
+                continue
             if integer<1 or integer>10000: raise
             roman=converter(integer)
             print("{} converts into {}".format(integer, roman))

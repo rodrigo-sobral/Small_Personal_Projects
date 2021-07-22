@@ -1,15 +1,34 @@
-# Small Personal Python Projects
+# Python Projects
 
 ___ 
 
-## Converter from roman numeration to decimal numeration
+## Integer <-> Roman 
 
-`Important Notes`: 
-- only converts numbers from 1 to 4999
-- numbers higher than 4999 have a specific symbology
+Note: only converts numbers from 1 to 4999 (numbers higher than 4999 have a specific symbology)
 
-### Technologies Used :computer:
+![integer2roman](resources/integer2roman.png)
+![roman2integer](resources/roman2integer.png)
 
-1) **Visual Studio Code**
+___ 
 
-2) **Python**
+## Target Shooting
+
+![target_shooting1](resources/target_shooting1.png)
+
+![target_shooting2](resources/target_shooting2.png)
+
+___ 
+
+## Tic Tac Toe Game
+
+![tictactoe](resources/tictactoe.png)
+
+___ 
+
+## Turtles Race
+
+![turtles_race1](resources/turtles_race1.png)
+
+![turtles_race2](resources/turtles_race2.png)
+
+___ 
