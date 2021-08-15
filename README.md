@@ -17,6 +17,7 @@ Graphical **Target Shooter** with Different cores | [TargetShooter](Python/Targe
 Graphical and Interactive **TicTacToe Game** | [TicTacToe](Python/TicTacToe.py) | *Python* :snake:
 Graphical **Turtles Race** with winner **Betting**  | [Roman2Integer](Python/TurtlesRace.py) | *Python* :snake:
 Via Terminal **Hanged Game** with several themes and game's history  | [Hanged_Game](C/Hanged_Game/GameEngine.c) | *C* :copyright:
+Bot for **Discord** that **schedules messages** (text, files, images, etc) | [Scheduler Bot](Python/Discord_Bots/Scheduler_Bot/main.py) | *Python* :snake:
 
 ___
 
