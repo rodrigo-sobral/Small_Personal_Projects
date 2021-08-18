@@ -1,6 +1,7 @@
 import datetime
 message_db= []
 
+#   Inserts and manages all messages scheduled to be delivered at the right time (from the most recent to the latest one)
 def insertNewMessage(message_container: dict):
     try: compareTime2Now(message_container['deliver_date'])
     except Exception as e: raise ValueError(str(e))
@@ -22,5 +23,15 @@ def compareTime2Now(deliver_date: datetime):
 
 #   Get the first message that must be delivered
 def getMostRecentMessageTime(): 
-    if len(message_db)!=0: return message_db[0]['deliver_date']
-    return None
+    return message_db[0]['deliver_date'] if len(message_db)!=0 else None
+
+
+#  ================================================================================
+
+
+#   Logs sent messages
+def logSentMessage(sent_message: str):
+    with open('./logs/sent_messages.log', 'a') as log_file: log_file.write(sent_message+'\n')
+
+def clearLogs():
+    with open('./logs/sent_messages.log', 'w') as log_file: log_file.write('')

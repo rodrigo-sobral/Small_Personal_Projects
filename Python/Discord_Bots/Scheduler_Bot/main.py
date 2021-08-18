@@ -1,10 +1,22 @@
+'''
+    __author__ = "Rodrigo Sobral"
+    __copyright__ = "Copyright 2021, Rodrigo Sobral"
+    __credits__ = ["Rodrigo Sobral"]
+    __license__ = "MIT"
+    __version__ = "1.0.1"
+    __maintainer__ = "Rodrigo Sobral"
+    __email__ = "rodrigosobral@sapo.pt"
+    __status__ = "Beta"
+'''
+
 import discord, datetime
 from dotenv import load_dotenv
 from keep_alive import keep_alive
-from db_manage import insertNewMessage, message_db, getMostRecentMessageTime
+from db_manage import insertNewMessage, message_db, getMostRecentMessageTime, logSentMessage
 from os import getenv
 from threading import Thread
 from time import sleep
+
 
 def defineBotIntents():
     intents = discord.Intents.default()
@@ -12,6 +24,9 @@ def defineBotIntents():
     return intents
 client = discord.Client(command_prefix='!', intents=defineBotIntents(), help_command='!sch help')
 wait_flag= False
+
+#   ================================================================================
+
 
 @client.event
 async def on_ready():
@@ -44,27 +59,90 @@ async def on_message(command: discord.Message):
             return await command.channel.send(':warning: Invalid deliver time format.\nExample: ```!sch Have a good dinner John and Harry! @John @Harry | 20:21 19/07/2021```\n')
         del inputed_date
 
+        #   Get Attachments from message
+        attachments= await getAttachmentsFromMessage(command.attachments)
+
         #   Clear date and hours from message
         command.content= clearString(command.content[:command.content.find(' | ')])
+        if not command.content and len(attachments)==0: return await command.channel.send(':warning: You must send any type of information (text or files)\n')
         message_container= {
+            'channel_name': command.channel.name,
             'sender': command.author,
             'receivers': tagged_users,
             'content': command.content,
-            'deliver_date': deliver_date
+            'deliver_date': deliver_date,
+            'attachments': attachments
         }
         
+        #   Stores the new message to the queue
         try: insertNewMessage(message_container)
         except Exception as e: return await command.channel.send(str(e))
         
-        return await command.channel.send(':white_check_mark: Your message \'{}\' will be sent to{} at '.format(message_container['content'], printUsersTag(message_container['receivers'])) + deliver_date.strftime("%H:%M:%S, %d/%m/%Y"))
+        return await command.channel.send(':white_check_mark: Your message \'{}\' (containing {} attachments) will be sent to{} at '.format(message_container['content'], len(attachments), printUsersTag(message_container['receivers'])) + deliver_date.strftime("%H:%M:%S, %d/%m/%Y"))
 
+#   Event triggered by TrackTime to send direct messages to the tagged users
 @client.event
 async def on_sendDMs():
     global wait_flag
     for receiver in message_db[0]['receivers']:
-        await receiver.send('{} sent you a message: {}'.format(printUserTag(message_db[0]['sender']), message_db[0]['content']))
+        await receiver.send('{} sent you a message (with {} attachments): {}'.format(printUserTag(message_db[0]['sender']), len(message_db[0]['attachments']), message_db[0]['content']))
+        [await receiver.send(file=attachment) for attachment in message_db[0]['attachments']]
+    registMessage(message_db[0])
     message_db.pop(0)
     wait_flag= False
+
+
+#   ================================================================================
+
+#   Clear all the not necessary spaces until the string is cleared or empty
+def clearString(string: str):
+    id_index= string.find('<@!')
+    if id_index!=-1: string= string[:id_index]
+    while string and string[0].isspace(): string= string[1:]
+    while string and string[-1].isspace(): string= string[:-1]
+    return string
+
+#   When the command only indicates hours (the date is, by default, today's date)
+def getOnlyHours(inputed_date:str):
+    today= datetime.datetime.now()
+    try: hour= datetime.datetime.strptime(inputed_date, '%H:%M:%S')
+    except:
+        try: hour= datetime.datetime.strptime(inputed_date, '%H:%M')
+        except: return None
+    return today.replace(hour=hour.hour, minute=hour.minute, second=hour.second, microsecond=0)
+
+#   When the command indicates hours and a date to the message be delivered
+def getHoursAndDate(inpute_date: str):
+    if inpute_date.find(' ')==-1: return None
+    try: date= datetime.datetime.strptime(inpute_date, '%H:%M:%S %d/%m/%Y')
+    except:
+        try: date= datetime.datetime.strptime(inpute_date, '%H:%M %d/%m/%Y')
+        except: return None
+    return date
+
+#   Get the list of attachments from the command and returns a list of discord.Files
+async def getAttachmentsFromMessage(attachments_list: list) -> discord.File:
+    if len(attachments_list)==0: return []
+    files= []
+    for attachment in attachments_list:
+        new_file= await discord.Attachment.to_file(attachment)
+        files.append(discord.File(new_file.fp, filename=new_file.filename))
+    return files
+        
+def printUserTag(user: discord.User): return '<@!'+str(user.id)+'>'
+def printUsersTag(users: list): 
+	text_format= ''
+	for user in users: text_format+= ' <@!'+str(user.id)+'>' 
+	return text_format
+def printUserName(user: discord.User): return str(user.name)
+def printUsersName(users: list): 
+	text_format= ''
+	for user in users: text_format+= ' '+str(user.name)
+	return text_format
+
+#   Sends a formatted log of a sent message to logSentMessage(), in db_manage.py
+def registMessage(message_container: dict):
+    logSentMessage('{}: {} [{}] ->{} | '.format(message_db[0]['channel_name'], printUserName(message_db[0]['sender']), len(message_db[0]['attachments']), printUsersName(message_container['receivers'])) + message_container['deliver_date'].strftime("%H:%M:%S, %d/%m/%Y"))
 
 
 #   We keep tracking current time to send messages in real time
@@ -78,36 +156,6 @@ def trackTime():
                 client.dispatch('sendDMs')
                 wait_flag= True
         sleep(1)
-
-
-#   ================================================================================
-#   Add a 0 to the beginning of deciaml numbers to make them more readable
-def clearString(string: str):
-    string= string[:string.find('<@!')]
-    while string[0].isspace(): string= string[1:]
-    while string[-1].isspace(): string= string[:-1]
-    return string
-
-def getOnlyHours(inputed_date:str):
-    today= datetime.datetime.now()
-    try: hour= datetime.datetime.strptime(inputed_date, '%H:%M:%S')
-    except:
-        try: hour= datetime.datetime.strptime(inputed_date, '%H:%M')
-        except: return None
-    return today.replace(hour=hour.hour, minute=hour.minute, second=hour.second, microsecond=0)
-def getHoursAndDate(inpute_date: str):
-    if inpute_date.find(' ')==-1: return None
-    try: date= datetime.datetime.strptime(inpute_date, '%H:%M:%S %d/%m/%Y')
-    except:
-        try: date= datetime.datetime.strptime(inpute_date, '%H:%M %d/%m/%Y')
-        except: return None
-    return date
-
-def printUserTag(user: discord.User): return '<@!'+str(user.id)+'>'
-def printUsersTag(users: list): 
-	text_format= ''
-	for user in users: text_format+= ' <@!'+str(user.id)+'>' 
-	return text_format
 
 
 #  ================================================================================
