@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>My IoT Home</title>
+        <link rel="shortcut icon" type="image/png" href="https://img.icons8.com/material-rounded/24/4a90e2/smart-home-connection.png"/>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css">
+        <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+    </head>
+
+    <body>
+        <section class="hero is-info is-fullheight">
+            <div class="hero-body">
+                <div class="container">
+                    <div class="columns is-centered">
+                        <div class="column is-half">
+
+                            <div class="field">
+                                <form class="field" action="addNewHouse" onSubmit="return alert('Don\'t forget to add a room');" method="POST">
+                                    <button type="submit" class="button is-rounded is-success is-small">Add New House</button>
+                                    <input type=text name="house_name" placeholder="House Name">
+                                </form>
+                                
+                                <form class="field" action="selectHouse" method="POST">
+                                    <button type="submit" class="button is-rounded is-danger is-small">Select</button>
+                                    <select name="available_houses">
+                                        <option value="">Available Houses</option>
+                                        {%for house in available_houses%} <option {%if house==selected_house%} selected {%endif%} value={{house}}>{{house}}</option> {%endfor%}
+                                    </select>
+                                </form>
+                            </div>
+                            <br><br>
+                            <div class="field">
+                                <form class="field" action="addNewRoom" onSubmit="return alert('Room submited successfully');" method="POST">
+                                    <button type="submit" class="button is-rounded is-success is-small">Add New Room</button>
+                                    <input type=text name="room_name" placeholder="Room Name">
+                                </form>
+                                
+                                <form class="field" action="selectRoom" method="POST">
+                                    <button type="submit" class="button is-rounded is-danger is-small">Select</button>
+                                    <select name="available_rooms">
+                                        <option value="">Available Rooms</option>
+                                        {% for room in available_rooms %} {{room}} <option {%if room==selected_room%} selected {%endif%} value={{room}}>{{room}}</option> {%endfor%}
+                                    </select>
+                                </form>
+                            </div>
+                            <br><br>
+                            <div class="field">
+                                <form class="field" action="manageRoom" method="GET">
+                                    <button type="submit" class="button is-rounded is-danger is-medium">Check Room</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </body>
+</html>

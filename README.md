@@ -21,6 +21,16 @@ Bot for **Discord** that **schedules messages** (text, files, images, etc) | [Sc
 
 ___
 
+## Todo :clipboard:
+
+- [ ] Write a ReadMe to IoTHome and delete the report
+- [ ] Finish the CheckersCheat
+- [ ] Finish the EmailKeyLogger
+- [ ] Fix the Scheduler Discord Bot
+- [ ] Build a Music Quiz Discord Bot
+
+___
+
 ### **Contributors** :sparkles:
 
 <html><i><b>@2021</b></i></html>

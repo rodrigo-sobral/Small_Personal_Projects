@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>My IoT Home</title>
+        <link rel="shortcut icon" type="image/png" href="https://img.icons8.com/material-rounded/24/4a90e2/smart-home-connection.png"/>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css">
+        <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+    </head>
+
+    <body>
+        <section class="hero is-info is-fullheight">
+            <div class="hero-body">
+                <div class="container">
+                    <div class="columns is-centered">
+                        <div class="column is-half">
+                            <form class="field" action="/">
+                                <button type="submit" class="button is-rounded is-danger is-medium">Home</button>
+                            </form>
+                            <br><label class="label"> {{house}}  -  {{room}}</label><br>
+                            <form class="field" action="submitData" onSubmit="return alert('Data submitted successfully');" method="POST">
+                                <div class="field"> 
+                                    <label class="label">Temperature: {{temperature}}ºC {%if heating=='1'%} 🔥 {%elif cooling=='1'%} ❄️ {%else%} 💤 {%endif%}
+                                    </label>
+                                    <label class="label">Presence: {%if human_presence=='1'%} People in the room {%else%} Nobody in the room {%endif%} </label>
+                                </div>
+                                <div class="field"> <label class="label">Temperature Management</label>
+                                    <input type=radio name="changes" value="0:0" {%if heating=='0' and cooling=='0'%} checked {%endif%}>Keep It 😴<br>
+                                    <input type=radio name="changes" value="1:0" {%if heating=='1'%} checked {%endif%}>Heat It 🥵<br>
+                                    <input type=radio name="changes" value="0:1" {%if cooling=='1'%} checked {%endif%}>Cool It 🥶<br>
+                                </div>
+                                <div class="field">
+                                    <label class="label">Minimum Temperature with Presence 
+                                        <input type=number step=0.1 min=-50 max=49.9 name="min1" value={{min1}}>
+                                    </label>
+                                    <label class="label">Maximum Temperature with Presence 
+                                        <input type=number step=0.1 min=-49.9 max=50 name="max1" value={{max1}}>
+                                    </label>
+                                    <label class="label">Minimum Temperature without Presence 
+                                        <input type=number step=0.1 min=-50 max=49.9 name="min2" value={{min2}}>
+                                    </label>
+                                    <label class="label">Maximum Temperature without Presence 
+                                        <input type=number step=0.1 min=-49.9 max=50 name="max2" value={{max2}}>
+                                    </label>
+                                </div>
+                                <div class="field"> 
+                                    <label class="label">Alarm
+                                        <input type="checkbox" {%if alarm=='1'%} checked {%endif%} name="alarm">
+                                    </label>
+                                    {%if alarm=='1' and human_presence=='1'%}
+                                    <label class="label">Alarm ON 🚨</label>
+                                    {%elif alarm=='1' and human_presence=='0'%}
+                                    <label class="label">Alarm Set 🕵🏻</label>
+                                    {%endif%}
+                                </div>
+                                <button type="submit" class="button is-rounded is-success">Submit</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </body>
+</html>
