@@ -10,8 +10,9 @@ from flask.templating import render_template_string
 
 #   --------------------------------------
 #   TOPICS
-ADAFRUIT_IO_USERNAME = 'Rodrigo2000'
-ADAFRUIT_IO_KEY = 'aio_YdZF06CSuG0XEiiwdSPntIaPsVnX'
+#  CHANGE THIS!
+ADAFRUIT_IO_USERNAME = 'your_aio_username'
+ADAFRUIT_IO_KEY = 'your_aio_key'
 
 MQTT_DASHBOARD_KEY = 'debugger'
 MQTT_GROUP_KEY = 'default'

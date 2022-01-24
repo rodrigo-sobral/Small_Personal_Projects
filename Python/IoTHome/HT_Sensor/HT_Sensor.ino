@@ -11,8 +11,9 @@
 
 #define AIO_SERVER          "io.adafruit.com"
 #define AIO_SERVERPORT      1883
-#define AIO_USERNAME         "Rodrigo2000"
-#define AIO_KEY              "aio_YdZF06CSuG0XEiiwdSPntIaPsVnX"
+//  CHANGE THIS!
+#define AIO_USERNAME         "your_aio_username"
+#define AIO_KEY              "your_aio_key"
 
 #define MQTT_TOPIC_ROOT         "/feeds/"
 #define MQTT_TOPIC_HP           "hp"
