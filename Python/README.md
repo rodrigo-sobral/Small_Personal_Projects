@@ -33,6 +33,7 @@ ___
 
 ___ 
 
+
 ## Scheduler Discord Bot
 
 ![scheduler_bot1](resources/scheduler_bot1.png)
@@ -40,5 +41,13 @@ ___
 ![scheduler_bot2](resources/scheduler_bot2.png)
 
 ![scheduler_bot3](resources/scheduler_bot3.png)
+
+___ 
+
+## IoT Home
+
+![iot1](resources/iot1.png)
+
+![iot2](resources/iot2.png)
 
 ___ 

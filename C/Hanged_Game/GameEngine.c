@@ -378,6 +378,7 @@ PlayerNode createPlayer(PlayerNode players) {
     scanf(" %[^\n]", new_player->name);
     printf("INSERT YOUR NATIONALITY: ");
     scanf(" %[^\n]", new_player->nationality);
+
     do {
         printf("INSERT YOUR GENDER [0-MALE, 1-FEMALE]: ");
         scanf("%hd", &new_player->gender);
@@ -395,12 +396,14 @@ PlayerNode createPlayer(PlayerNode players) {
 
 void printRegisteredPlayers(PlayerNode players) {
     system("cls");  
-    if (players==NULL) printf("\tERROR! THERE IS NO PLAYERS REGISTERED YET!\n\tBACKING TO MAIN MENU...\n");
+    if (players==NULL) 
+        printf("\tERROR! THERE IS NO PLAYERS REGISTERED YET!\n\tBACKING TO MAIN MENU...\n");
     else {
         printf("----------------------REGISTERED PLAYERS----------------------\n");
         printf(" ID\tNAME\t\tGENDER\tNATIONALITY\t\tBORN\t\tGAMES\tWINS\tLOSSES\n");
         printPlayers(players, PRINT_PLAYERS_INFO);
-    } enterToContinue();
+    }
+    enterToContinue();
 }
 void printRegisteredThemesAndWords(ThemeNode themes) {
     system("cls");  
