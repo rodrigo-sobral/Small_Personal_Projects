@@ -1,0 +1,9 @@
+#   Folders
+.vscode
+__pycache__
+
+#   GIT config files
+.gitattributes
+
+#   Enviroment Variables
+.env

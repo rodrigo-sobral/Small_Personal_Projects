@@ -1,6 +1,6 @@
 '''
     __author__ = "Rodrigo Sobral"
-    __copyright__ = "Copyright 2021, Rodrigo Sobral"
+    __copyright__ = "Copyright @2021, Rodrigo Sobral"
     __credits__ = ["Rodrigo Sobral"]
     __license__ = "MIT"
     __version__ = "1.0.1"
@@ -10,18 +10,16 @@
 '''
 
 import discord, datetime
-from dotenv import load_dotenv
-from keep_alive import keep_alive
-from db_manage import insertNewMessage, message_db, getMostRecentMessageTime, logSentMessage
-from os import getenv
+from web.webserver import WebServer
+from src.db.db_manage import insertNewMessage, message_db, getMostRecentMessageTime, logSentMessage
+from os import environ
 from threading import Thread
 from time import sleep
 
 
 def defineBotIntents():
-    intents = discord.Intents.default()
-    intents.members = True
-    return intents
+    return discord.Intents.default().members(True).priv_channels(True).presences(True).messages(True)
+
 client = discord.Client(command_prefix='!', intents=defineBotIntents(), help_command='!sch help')
 wait_flag= False
 
@@ -161,9 +159,9 @@ def trackTime():
 #  ================================================================================
 
 
-def runClient(): client.run(getenv('SCHEDULING_BOT_TOKEN'))
+def runClient(): client.run(environ['SCHEDULING_BOT_TOKEN'])
 if __name__ == "__main__":
-    load_dotenv()
     Thread(target=runClient).start()
     Thread(target=trackTime).start()
-    keep_alive()
+    web_server = WebServer()
+    web_server.runServerInstance()
