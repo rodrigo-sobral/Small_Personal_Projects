@@ -14,7 +14,7 @@ def insertNewMessage(message_container: dict):
         elif message_container['deliver_date'] > message_db[message_index]['deliver_date']: continue
     message_db.append(message_container)
 
-#   Compare year, month, day, hour, minute, second of message_container to real time and raise error if out of date       
+#   Compare year, month, day, hour, minute, second of message_container to real time and raise error if out of date
 def compareTime2Now(deliver_date: datetime):
     now = datetime.datetime.now()
     if deliver_date < now:
@@ -22,7 +22,7 @@ def compareTime2Now(deliver_date: datetime):
     return
 
 #   Get the first message that must be delivered
-def getMostRecentMessageTime(): 
+def getMostRecentMessageTime():
     return message_db[0]['deliver_date'] if len(message_db)!=0 else None
 
 

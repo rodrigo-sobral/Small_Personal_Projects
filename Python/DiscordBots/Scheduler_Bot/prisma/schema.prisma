@@ -12,7 +12,7 @@ generator client {
   provider = "prisma-client-py"
 }
 
-model ArcadeProfile {
+model Message {
   key String @id @default(dbgenerated("gen_random_uuid()"))
   user_key String @unique
   created_at DateTime @default(now())

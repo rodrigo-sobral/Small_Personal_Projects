@@ -12,15 +12,10 @@
 import discord, datetime
 from web.webserver import WebServer
 from src.db.db_manage import insertNewMessage, message_db, getMostRecentMessageTime, logSentMessage
-from os import environ
 from threading import Thread
 from time import sleep
 
 
-def defineBotIntents():
-    return discord.Intents.default().members(True).priv_channels(True).presences(True).messages(True)
-
-client = discord.Client(command_prefix='!', intents=defineBotIntents(), help_command='!sch help')
 wait_flag= False
 
 #   ================================================================================
@@ -40,20 +35,20 @@ async def on_message(command: discord.Message):
     #   Schedule a message to be sent
     elif command.content.startswith('!sch'):
         command.content= command.content[4:]
-		
+
         tagged_users=[]
         if command.content.find('<@!')==-1 or command.mention_everyone: [tagged_users.append(member) for member in command.channel.members if not member.bot]
         else: [tagged_users.append(member) for member in command.mentions if not member.bot]
-        
+
         #   Get Deliver Time from message
-        if command.content.count('|')!=1: 
+        if command.content.count('|')!=1:
             return await command.channel.send(':warning: Invalid command format.\nExample: ```!sch Have a good dinner John and Harry! @John @Harry | 20:21 19/07/2021```\n')
-        
+
         inputed_date= command.content[command.content.find(' | ')+3:]
         #   If the date is not given, use the current date
         deliver_date= getHoursAndDate(inputed_date)
         if not deliver_date: deliver_date=getOnlyHours(inputed_date)
-        if not deliver_date: 
+        if not deliver_date:
             return await command.channel.send(':warning: Invalid deliver time format.\nExample: ```!sch Have a good dinner John and Harry! @John @Harry | 20:21 19/07/2021```\n')
         del inputed_date
 
@@ -71,11 +66,11 @@ async def on_message(command: discord.Message):
             'deliver_date': deliver_date,
             'attachments': attachments
         }
-        
+
         #   Stores the new message to the queue
         try: insertNewMessage(message_container)
         except Exception as e: return await command.channel.send(str(e))
-        
+
         return await command.channel.send(':white_check_mark: Your message \'{}\' (containing {} attachments) will be sent to{} at '.format(message_container['content'], len(attachments), printUsersTag(message_container['receivers'])) + deliver_date.strftime("%H:%M:%S, %d/%m/%Y"))
 
 #   Event triggered by TrackTime to send direct messages to the tagged users
@@ -126,28 +121,23 @@ async def getAttachmentsFromMessage(attachments_list: list) -> discord.File:
         new_file= await discord.Attachment.to_file(attachment)
         files.append(discord.File(new_file.fp, filename=new_file.filename))
     return files
-        
-def printUserTag(user: discord.User): return '<@!'+str(user.id)+'>'
-def printUsersTag(users: list): 
-	text_format= ''
-	for user in users: text_format+= ' <@!'+str(user.id)+'>' 
-	return text_format
-def printUserName(user: discord.User): return str(user.name)
-def printUsersName(users: list): 
-	text_format= ''
-	for user in users: text_format+= ' '+str(user.name)
-	return text_format
 
 #   Sends a formatted log of a sent message to logSentMessage(), in db_manage.py
 def registMessage(message_container: dict):
-    logSentMessage('{}: {} [{}] ->{} | '.format(message_db[0]['channel_name'], printUserName(message_db[0]['sender']), len(message_db[0]['attachments']), printUsersName(message_container['receivers'])) + message_container['deliver_date'].strftime("%H:%M:%S, %d/%m/%Y"))
+    logSentMessage('{}: {} [{}] ->{} | '.format(
+			message_db[0]['channel_name'],
+			printUserName(message_db[0]['sender']),
+			len(message_db[0]['attachments']),
+			printUsersName(message_container['receivers'])
+		) + message_container['deliver_date'].strftime("%H:%M:%S, %d/%m/%Y")
+	)
 
 
 #   We keep tracking current time to send messages in real time
 def trackTime():
     global wait_flag
     print('Tracking Time...')
-    while True: 
+    while True:
         now = datetime.datetime.now().replace(microsecond=0)
         first_message_time= getMostRecentMessageTime()
         if not wait_flag and first_message_time and first_message_time <= now:
@@ -159,7 +149,6 @@ def trackTime():
 #  ================================================================================
 
 
-def runClient(): client.run(environ['SCHEDULING_BOT_TOKEN'])
 if __name__ == "__main__":
     Thread(target=runClient).start()
     Thread(target=trackTime).start()
