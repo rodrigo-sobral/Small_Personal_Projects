@@ -1,4 +1,11 @@
-*__pycache__*
-*.env*
+# VSCode config folders
 .vscode
+
+# Python config folders
+*__pycache__*
+
+# Enviroments
+*.env*
+
+# Logs
 *logs*
