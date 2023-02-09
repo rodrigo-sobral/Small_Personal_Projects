@@ -22,9 +22,7 @@ ___
 
 ## Todo :clipboard:
 
-- [x] Write a ReadMe to IoTHome and delete the report
-- [ ] Finish the CheckersCheat
-- [ ] Finish the EmailKeyLogger
+...
 
 ___
 
