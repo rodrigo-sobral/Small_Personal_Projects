@@ -11,13 +11,12 @@ ___
 
 Concept | File | Programming language 
 -- | -- | --
-Converter of **Integer** into **Roman Numeration** | [Integer2Roman](Python/IntegersRomans/Integer2Roman.py) | <img src="https://img.icons8.com/color/48/000000/python--v1.png"/>
-Converter of **Roman Numeration** into **Integer** | [Roman2Integer](Python/IntegersRomans/Roman2Integer.py) | <img src="https://img.icons8.com/color/48/000000/python--v1.png"/>
-Graphical **Target Shooter** with Different cores | [Target Shooter](Python/MiniGames/TargetShooting.py) | <img src="https://img.icons8.com/color/48/000000/python--v1.png"/>
-Graphical and Interactive **TicTacToe Game** | [Tic Tac Toe](Python/MiniGames/TicTacToe.py) | <img src="https://img.icons8.com/color/48/000000/python--v1.png"/>
-Graphical **Turtles Race** with winner **Betting**  | [Turtles Race](Python/MiniGames/TurtlesRace.py) | <img src="https://img.icons8.com/color/48/000000/python--v1.png"/>
-Terminal **Hanged Game** with several themes and game's history  | [Hanged_Game](C/Hanged_Game/GameEngine.c) |  <img src="https://img.icons8.com/color/48/000000/c-programming.png"/>
-Home **IoT Management** (*MQTT*) | [Air Conditioner](Python/IoTHome/AC/AC.ino) <br> [Humidiy and Temparature Sensor](Python/IoTHome/HT_Sensor/HT_Sensor.ino) <br> [Web Server](Python/IoTHome/Web/app.py) | <img src="https://img.icons8.com/color/48/000000/python--v1.png"/>
+Converter between **Integer** and **Roman Numeration** | [roman_integer-converter.py](Python/IntegersRomans/roman_integer-converter.py) | <img src="https://img.icons8.com/color/48/000000/python--v1.png"/>
+Graphical and random **Target Shooter** | [target_shoorting.py](Python/MiniGames/target_shoorting.py) | <img src="https://img.icons8.com/color/48/000000/python--v1.png"/>
+Graphical and Interactive **TicTacToe Game** | [tictactoe.py](Python/MiniGames/tictactoe.py) | <img src="https://img.icons8.com/color/48/000000/python--v1.png"/>
+Graphical **Turtles Race** with **Betting** system  | [turtles_race.py](Python/MiniGames/turtles_race.py) | <img src="https://img.icons8.com/color/48/000000/python--v1.png"/>
+Via terminal **Hanged Game** with several themes and game ranking records  | [main.c](C/Hanged_Game/GameEngine.c) |  <img src="https://img.icons8.com/color/48/000000/c-programming.png"/>
+Home **IoT Management** (*MQTT*) | [ac.ino](Python/IoTHome/ac/ac.ino) <br> [ht_sensor.ino](Python/IoTHome/sensor/ht_sensor.ino) <br> [app.py](Python/IoTHome/web/app.py) | <img src="https://img.icons8.com/color/48/000000/python--v1.png"/>
 
 ___
 

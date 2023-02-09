@@ -4,9 +4,9 @@
 
 This was the 3rd ***SCM*** (Mobile Communication Services) assignment.
 
-Through a **web application**, you are able to **control the temperature** of your home air conditioners and **set LED alarms** when any movement is detected in some room.
+Through a **web application**, you are able to **control the temperature** of your home air conditioners and **set LED alarms** when any movement is detected in any configured room.
 
-All this works using several ***esp8266*** devices connected to your home WiFi network and messaging through ***MQTT*** messages.
+All this using several ***esp8266*** devices connected to your home WiFi network and messaging through ***MQTT*** messages.
 
 Main Menu                  |  Room Menu
 :-------------------------:|:-------------------------:
