@@ -5,7 +5,13 @@
 *__pycache__*
 
 # Enviroments
-*.env*
+*.env
 
 # Logs
-*logs*
+*logs
+
+# Rust build folders
+Rust/*/target
+
+# Others
+Python/GetFlyordieData/dados_jogadores.txt
