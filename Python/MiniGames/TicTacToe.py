@@ -29,7 +29,7 @@ def drawGrid():
     grid_turtle.pensize(5)
     goTo(grid_turtle, -GRID_SIZE/2, GRID_SIZE/2)
     
-    for i in range(4):
+    for _ in range(4):
         grid_turtle.fd(GRID_SIZE)
         grid_turtle.right(90)
 

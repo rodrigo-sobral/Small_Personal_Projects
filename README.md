@@ -15,7 +15,7 @@ Converter between **Integer** and **Roman Numeration** | [roman_integer-converte
 Graphical and random **Target Shooter** | [target_shoorting.py](Python/MiniGames/target_shoorting.py) | <img src="https://img.icons8.com/color/48/000000/python--v1.png"/>
 Graphical and Interactive **TicTacToe Game** | [tictactoe.py](Python/MiniGames/tictactoe.py) | <img src="https://img.icons8.com/color/48/000000/python--v1.png"/>
 Graphical **Turtles Race** with **Betting** system  | [turtles_race.py](Python/MiniGames/turtles_race.py) | <img src="https://img.icons8.com/color/48/000000/python--v1.png"/>
-Via terminal **Hanged Game** with several themes and game ranking records  | [main.c](C/Hanged_Game/GameEngine.c) |  <img src="https://img.icons8.com/color/48/000000/c-programming.png"/>
+Via terminal **Hanged Game** with several themes and game ranking records  | [main.c](C/Hanged_Game/main.c) |  <img src="https://img.icons8.com/color/48/000000/c-programming.png"/>
 Home **IoT Management** (*MQTT*) | [ac.ino](Python/IoTHome/ac/ac.ino) <br> [ht_sensor.ino](Python/IoTHome/sensor/ht_sensor.ino) <br> [app.py](Python/IoTHome/web/app.py) | <img src="https://img.icons8.com/color/48/000000/python--v1.png"/>
 
 ___
