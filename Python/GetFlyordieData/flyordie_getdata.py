@@ -1,8 +1,21 @@
-from pdb import set_trace
+from termcolor import colored
 from requests import get
 from bs4 import BeautifulSoup
 from sys import argv
 from math import floor
+from time import sleep
+
+
+COLORS = {
+    "Jogador": "on_yellow",
+    "Jogo": "blue",
+    'Pontos': 'light_grey',
+    'Partidas': 'magenta',
+    'Vitórias': 'green',
+    'Empates': 'yellow',
+    'Derrotas': 'red',
+}
+
 
 def clear_int(value: str) -> int:
     return int(value.replace(',', '').replace(',', '').replace('(', '').replace(')', ''))
@@ -13,11 +26,11 @@ def clear_float(value: str) -> float:
 
 def get_player_games(player_name: str, errors: list = []) -> dict:
     response = get(f'https://games.flyordie.com/players/{player_name}')
-    if response.status_code == 404:
-        errors.append(f'Jogador {player_name} não encontrado')
-        return
-    elif response.status_code == 500:
+    if response.status_code >= 500:
         errors.append('Erro interno do servidor ao buscar os jogos do jogador')
+        return
+    elif response.status_code == 404:
+        errors.append(f'Jogador {player_name} não encontrado')
         return
     elif response.status_code == 200:
         game_data = {}
@@ -26,7 +39,7 @@ def get_player_games(player_name: str, errors: list = []) -> dict:
             errors.append(f'Erro ao ler a lista de jogos do jogador {player_name}')
             return
 
-        for result in soup_response.find_all("a", class_="b gle"):
+        for result in soup_response.find("div", class_="F C gameListCenter gameList gameList-wide gameListTab initial-tab").children:
             game_name = result.attrs["href"].split("/")[-1]
             points, matches = result.text.split('\n')[1:]
             game_data[game_name] = {
@@ -36,12 +49,16 @@ def get_player_games(player_name: str, errors: list = []) -> dict:
         return game_data
 
 def get_player_game_results(player_name: str, game_name: str, total_matches: int, errors: list = []) -> dict:
+    if total_matches == 0:
+        return {'Vitórias': '0, 0%', 'Empates': '0, 0%', 'Derrotas': '0, 0%'}
+    
     response = get(f'https://games.flyordie.com/players/{player_name}/{game_name}')
+    sleep(0.1)
+    if response.status_code >= 500:
+        errors.append(f'Erro interno do servidor ao procurar os resultados do jogo {game_name} do jogador {player_name}')
+        return
     if response.status_code == 404:
         errors.append(f'Jogo {game_name} do jogador {player_name} não encontrado')
-        return
-    elif response.status_code == 500:
-        errors.append('Erro interno do servidor ao procurar os resultados do jogo')
         return
     elif response.status_code == 200:
         soup_response = BeautifulSoup(response.text, 'html.parser')
@@ -50,28 +67,32 @@ def get_player_game_results(player_name: str, game_name: str, total_matches: int
             return
 
         wins = clear_int(soup_response.find("div", class_="w winCount H").text)
-
-        win_tags = soup_response.find_all("div", class_="pieSegmentInner winsItem") or None
-        draw_tag = soup_response.find("div", class_="pieSegmentInner drawsItem") or None
+        
         loss_tag = soup_response.find("div", class_="pieSegmentInner lossesItem") or None
+        draw_tag = soup_response.find("div", class_="pieSegmentInner drawsItem") or None
+        
+        loss_degree = 0
+        if loss_tag:
+            loss_degree = 360 - clear_float(loss_tag.parent.attrs["style"])
+        
+        draw_degree = 0
+        if draw_tag:
+            if loss_degree == 0:
+                draw_degree = 360 - clear_float(draw_tag.parent.attrs["style"])
+            else:
+                draw_degree = clear_float(loss_tag.parent.attrs["style"]) - clear_float(draw_tag.parent.attrs["style"])
 
-        win_degree = 0
-        if win_tags:
-            for tag in win_tags:
-                win_degree += clear_float(tag.attrs["style"])
-        draw_degree = clear_float(draw_tag.attrs["style"]) if draw_tag else 0
-        loss_degree = clear_float(loss_tag.attrs["style"]) if loss_tag else 0
-
-        wins_2 = floor((win_degree * total_matches) / 360)
         draws = floor((draw_degree * total_matches) / 360)
         losses = floor((loss_degree * total_matches) / 360)
             
         return {
             'Vitórias': f"{wins}, {round(wins / total_matches * 100, 2)}%",
-            'Vitórias_2': f"{wins_2}, {round(wins_2 / total_matches * 100, 2)}%",
             'Empates': f"{draws}, {round(draws / total_matches * 100, 2)}%",
             'Derrotas': f"{losses}, {round(losses / total_matches * 100, 2)}%"
         }
+    else:
+        errors.append(f'Erro desconhecido ao buscar os resultados do jogo {game_name} do jogador {player_name}')
+        return
 
 
 def print_results(players_results: dict, export: bool = False) -> None:
@@ -79,11 +100,14 @@ def print_results(players_results: dict, export: bool = False) -> None:
     if export is True:
         file_result = open('dados_jogadores.txt', mode='w', encoding='utf-8')
     for player, player_games in players_results.items():
+        player = colored(player, on_color=COLORS.get("Jogador")) if export is False else player
         print(f'Jogador: {player}', file=file_result)
         for game, game_results in player_games.items():
+            game = colored(game, COLORS.get("Jogo")) if export is False else game
             print(f'  Jogo: {game}:', file=file_result)
-            for result, matches_counter in game_results.items():
-                print(f'    {result} - {matches_counter}', file=file_result)
+            for result, counter in game_results.items():
+                counter = colored(counter, COLORS.get(result)) if export is False else counter
+                print(f'    {result} - {counter}', file=file_result)
     if export is True:
         file_result.close()
 
@@ -92,7 +116,7 @@ def print_errors(errors: list) -> None:
         return
     print('Ocorreram os seguintes erros:')
     for error in errors:
-        print(f"\tErro: {error}")
+        print(f"  Erro: {colored(error, color='red')}")
     print('\n\n')
 
 
@@ -116,9 +140,9 @@ if __name__ == '__main__':
     
     for name, games in players_results.items():
         for game in games:
-            player_results = get_player_game_results(name, game, games[game]['Partidas'], errors)
-            if player_results:
-                players_results[name][game].update(player_results)
+            results = get_player_game_results(name, game, games[game]['Partidas'], errors)
+            if results:
+                players_results[name][game].update(results)
     
     print_errors(errors)
     print_results(players_results, export_result)
