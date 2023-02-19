@@ -1,20 +1,10 @@
-from termcolor import colored
+#!/usr/bin/env python
+
 from requests import get
 from bs4 import BeautifulSoup
 from sys import argv
 from math import floor
 from time import sleep
-
-
-COLORS = {
-    "Jogador": "on_yellow",
-    "Jogo": "blue",
-    'Pontos': 'light_grey',
-    'Partidas': 'magenta',
-    'Vitórias': 'green',
-    'Empates': 'yellow',
-    'Derrotas': 'red',
-}
 
 
 def clear_int(value: str) -> int:
@@ -39,7 +29,11 @@ def get_player_games(player_name: str, errors: list = []) -> dict:
             errors.append(f'Erro ao ler a lista de jogos do jogador {player_name}')
             return
 
-        for result in soup_response.find("div", class_="F C gameListCenter gameList gameList-wide gameListTab initial-tab").children:
+        game_list = soup_response.find("div", class_="F C gameListCenter gameList gameList-wide gameListTab initial-tab")
+        if getattr(game_list, "children", None) is None:
+            errors.append(f'Erro ao ler a lista de jogos do jogador {player_name}')
+            return
+        for result in game_list.children:
             game_name = result.attrs["href"].split("/")[-1]
             points, matches = result.text.split('\n')[1:]
             game_data[game_name] = {
@@ -98,16 +92,18 @@ def get_player_game_results(player_name: str, game_name: str, total_matches: int
 def print_results(players_results: dict, export: bool = False) -> None:
     file_result = None
     if export is True:
-        file_result = open('dados_jogadores.txt', mode='w', encoding='utf-8')
+        file_name = ""
+        for player_name in players_results.keys():
+             file_name += player_name.replace(" ", "_")+"-"
+        file_name = file_name[:-1] + ".txt"
+        file_result = open(file_name, mode='w', encoding='utf-8')
     for player, player_games in players_results.items():
-        player = colored(player, on_color=COLORS.get("Jogador")) if export is False else player
-        print(f'Jogador: {player}', file=file_result)
+        print(f'Jogador: {player}\n', file=file_result)
         for game, game_results in player_games.items():
-            game = colored(game, COLORS.get("Jogo")) if export is False else game
             print(f'  Jogo: {game}:', file=file_result)
             for result, counter in game_results.items():
-                counter = colored(counter, COLORS.get(result)) if export is False else counter
                 print(f'    {result} - {counter}', file=file_result)
+        print("\n", file=file_result)
     if export is True:
         file_result.close()
 
@@ -116,8 +112,7 @@ def print_errors(errors: list) -> None:
         return
     print('Ocorreram os seguintes erros:')
     for error in errors:
-        print(f"  Erro: {colored(error, color='red')}")
-    print('\n\n')
+        print(f"  {error}")
 
 
 if __name__ == '__main__':
