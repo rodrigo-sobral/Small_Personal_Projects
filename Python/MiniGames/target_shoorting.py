@@ -10,8 +10,8 @@ def goTo(turtle, x, y):
     turtle.pd()
 
 #   Drawers ==========================
-def drawTargetCircle(target_turtle, y, color, points):
-    goTo(target_turtle, 0,-y)
+def drawTargetCircle(target_turtle: Turtle, y: int, color: str, points: int) -> None:
+    goTo(target_turtle, 0, -y)
     target_turtle.begin_fill()
     target_turtle.fillcolor(color)
     target_turtle.circle(y)
@@ -20,10 +20,10 @@ def drawTargetCircle(target_turtle, y, color, points):
     target_turtle.circle(y)
     target_turtle.pencolor("black")
     target_turtle.pensize(1.4)
-    goTo(target_turtle, 0,-y+25)
+    goTo(target_turtle, 0, -y + 25)
     target_turtle.circle(y-25)
     target_turtle.pensize(3)
-    goTo(target_turtle, -y+5, 0)
+    goTo(target_turtle, -y + 5, 0)
     if color=="black": target_turtle.pencolor("white")
     target_turtle.write(points)
     
@@ -31,7 +31,7 @@ def drawPanel(target_turtle):
     goTo(target_turtle, -290, 290)
     target_turtle.begin_fill()
     target_turtle.fillcolor('#612d17')
-    for i in range(4):
+    for _ in range(4):
         target_turtle.fd(580)
         target_turtle.right(90)
     target_turtle.end_fill()
@@ -47,7 +47,7 @@ def drawTarget():
     
     target_turtle.begin_fill()
     target_turtle.fillcolor('black')
-    for i in range(4):
+    for _ in range(4):
         target_turtle.fd(600)
         target_turtle.right(90)
     target_turtle.end_fill()
@@ -70,10 +70,10 @@ def play():
         bullets_turtle.hideturtle()
         shots_to_fire = simpledialog.askinteger(title="", prompt="How many shots you want to fire:")
         points = 0
-        for i in range(shots_to_fire):
+        for _ in range(shots_to_fire):
             x, y = randint(-285,285), randint(-285,285)
             
-            goTo(bullets_turtle, x,y-5)
+            goTo(bullets_turtle, x, y - 5)
             bullets_turtle.pensize(3)
             bullets_turtle.pencolor("black")
 
@@ -82,13 +82,13 @@ def play():
             bullets_turtle.circle(10)
             bullets_turtle.end_fill()
 
-            dist_cent= sqrt(x**2+y**2)
-            if (dist_cent<=75): points+=50
-            elif (dist_cent<=135): points+=25
-            elif (dist_cent<=195): points+=15
-            elif (dist_cent<=255): points+=5
+            dist_cent= sqrt(x**2 + y**2)
+            if (dist_cent<=75): points += 50
+            elif (dist_cent<=135): points += 25
+            elif (dist_cent<=195): points += 15
+            elif (dist_cent<=255): points += 5
             
-        confirmation = messagebox.askyesno(title='Results', message='Congratulations! You scored {} points.\nDo you want to shoot again?'.format(points))
+        confirmation = messagebox.askyesno(title='Results', message=f'Congratulations! You scored {points} points.\nDo you want to shoot again?')
 
 if __name__ == "__main__":
     drawTarget()
