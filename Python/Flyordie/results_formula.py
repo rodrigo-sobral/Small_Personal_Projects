@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from tkinter import Button, Tk, Entry
+import tkinter as tk
 
 # https://www.flyordie.com/games/help/rating_system.html
 
@@ -63,17 +63,42 @@ def maybe_int(value: str, errors: list) -> int:
         errors.append(f'Valor "{value}" não é um número válido')
         return None
 
+def build_window() -> tk.Tk:
+    SCREEN_WIDTH, SCREEN_HEIGHT = 480, 320
+    window = tk.Tk(className="Results Formula")
+    window.geometry(f"{SCREEN_WIDTH}x{SCREEN_HEIGHT}")
+    window.title("Formula de Resultados")
+    return window
+
+def players_data_menu() -> None:
+    window = build_window()
+    window.mainloop()
+
+def result_simulator() -> None:
+    window = build_window()
+    window.mainloop()
+
+def build_menu(window: tk.Tk) -> None:
+    menubar = tk.Menu(window)
+    filemenu = tk.Menu(menubar, tearoff=0)
+    filemenu.add_command(label="Dados Jogadores", command=players_data_menu)
+    filemenu.add_command(label="Simulador de Resultados", command=result_simulator)
+    filemenu.add_separator()
+    filemenu.add_command(label="Sair", command=window.quit)
+    menubar.add_cascade(label="Ferramentas", menu=filemenu)
+    window.config(menu=menubar)
 
 
 if __name__ == '__main__':
-    SCREEN_WIDTH, SCREEN_HEIGHT = 1420, 720
-    window = Tk(className="Results Formula")
-    window.geometry(f"{SCREEN_WIDTH}x{SCREEN_HEIGHT}")
-    window.title("Formula de Resultados")
-    input1 = Entry(window)
-    input1.grid(row=0, column=0, padx=10, pady=10)
-    input2 = Entry(window)
-    input2.grid(row=1, column=0, padx=10, pady=10)
-    generate_button = Button(window, text="Generate")
-    generate_button.grid(row=0, column=1, rowspan=2, padx=10, pady=10)
+    window = build_window()
+    # players_data_menu = tk.Button(window, text="Dados dos Jogadores")
+    # players_data_menu.grid(row=0, column=0, rowspan=2, padx=0, pady=0)
+    # result_simulator = tk.Button(window, text="Simulador de Resultados")
+    # result_simulator.grid(row=1, column=0, rowspan=2, padx=10, pady=10)
+    input1 = tk.Entry(window)
+    input1.grid(row=0, column=1, padx=25, pady=15)
+    input2 = tk.Entry(window)
+    input2.grid(row=1, column=1, padx=25, pady=15)
+    generate_button = tk.Button(window, text="Generate")
+    generate_button.grid(row=0, column=2, rowspan=2, padx=10, pady=10)
     window.mainloop()
