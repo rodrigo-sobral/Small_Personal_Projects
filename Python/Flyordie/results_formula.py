@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from tkinter import Tk, Entry
+from tkinter import Button, Tk, Entry
 
 # https://www.flyordie.com/games/help/rating_system.html
 
@@ -66,32 +66,14 @@ def maybe_int(value: str, errors: list) -> int:
 
 
 if __name__ == '__main__':
-    window = Tk(className=" Make Your Bet")
+    SCREEN_WIDTH, SCREEN_HEIGHT = 1420, 720
+    window = Tk(className="Results Formula")
+    window.geometry(f"{SCREEN_WIDTH}x{SCREEN_HEIGHT}")
     window.title("Formula de Resultados")
     input1 = Entry(window)
+    input1.grid(row=0, column=0, padx=10, pady=10)
     input2 = Entry(window)
-    
-    SCREEN_WIDTH= 1420
-    SCREEN_HEIGHT= 720
-
-
-import tkinter as tk
-
-# Create the main window
-root = tk.Tk()
-
-# Set the window title
-root.title("Menu")
-
-# Create the string input fields
-
-# Create the generate button
-generate_button = tk.Button(root, text="Generate")
-
-# Create a grid layout and place the elements
-input1.grid(row=0, column=0, padx=10, pady=10)
-input2.grid(row=1, column=0, padx=10, pady=10)
-generate_button.grid(row=0, column=1, rowspan=2, padx=10, pady=10)
-
-# Start the main event loop
-root.mainloop()
+    input2.grid(row=1, column=0, padx=10, pady=10)
+    generate_button = Button(window, text="Generate")
+    generate_button.grid(row=0, column=1, rowspan=2, padx=10, pady=10)
+    window.mainloop()
