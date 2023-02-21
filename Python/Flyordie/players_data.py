@@ -5,13 +5,7 @@ from bs4 import BeautifulSoup
 from sys import argv
 from math import floor
 from time import sleep
-
-
-def clear_int(value: str) -> int:
-    return int(value.replace(',', '').replace(',', '').replace('(', '').replace(')', ''))
-
-def clear_float(value: str) -> float:
-    return float(value.split(' ')[-1].replace("rotate", "").replace("(", "").replace(")", "").replace("deg", "").replace(";", "").replace(" ", ""))
+from utils import clear_int, clear_float
 
 
 def get_player_games(player_name: str, errors: list = []) -> dict:
