@@ -1,6 +1,6 @@
-from collections import defaultdict
 import tkinter as tk
-from pdb import set_trace
+from datetime import timedelta, datetime
+from collections import defaultdict
 from tkinter import messagebox
 from PIL import Image, ImageTk
 from requests import get
@@ -77,8 +77,8 @@ class Window(tk.Tk):
     def show_frame(self, page_name: str) -> None:
         self.frames[page_name].tkraise()
 
-    def add_player_input_field(self, frame: tk.Frame, placeholder: str = "Nome do Jogador", can_delete: bool = False, **kwargs) -> tk.Entry:
-        entry = tk.Entry(frame, fg="gray", width=20, font=NORMAL_FONT, **kwargs)
+    def add_player_input_field(self, frame: tk.Frame, placeholder: str = "Nome do Jogador", can_delete: bool = False) -> tk.Entry:
+        entry = tk.Entry(frame, fg="gray", width=20, font=NORMAL_FONT)
         entry.insert(0, placeholder)
         if can_delete is True:
             def destroy_entry():
@@ -99,7 +99,7 @@ class Window(tk.Tk):
 
         entry.bind("<Button-1>", on_click)
         entry.bind("<FocusOut>", on_focusout)
-        entry.pack(pady=10, padx=10, **kwargs)
+        entry.pack(pady=10, padx=10)
         if can_delete is True:
             # attach the button position to the entry
             delete_entry_button.place(x=entry.winfo_x()+entry.winfo_width()+5, y=entry.winfo_y())
@@ -158,45 +158,83 @@ class ResultSimulator(tk.Frame):
         vs = tk.Label(self, text="VS", **TEXT_PROPS)
         vs.pack()
         controller.add_player_input_field(self, "Nome do Oponente")
+        controller.add_player_input_field(self, "Jogo")
         
         generate_button = tk.Button(self, text="Gerar Resultado", **GREEN_BUTTON_PROPS, command=lambda: self.generate_result())
         generate_button.pack(side=tk.TOP, padx=10, pady=5)
 
-        results_label = tk.Label(self, **TEXT_PROPS, name="results_label")
-        results_label.pack(side=tk.TOP, padx=10, pady=5)
-        
         button_back = tk.Button(self, text="Voltar", font=NORMAL_FONT, command=lambda: controller.show_frame("MainMenu"))
         button_back.pack(side=tk.BOTTOM, pady=10)
+        
+        results_label = tk.Label(self, **TEXT_PROPS)
+        results_label.pack(side=tk.BOTTOM, padx=10, pady=5)
 
     def generate_result(self) -> None:
         player_name = self.__dict__["children"]["!entry"].get().strip()
         opponent_name = self.__dict__["children"]["!entry2"].get().strip()
+        game_name = self.__dict__["children"]["!entry3"].get().strip()
         if not player_name or player_name == "Nome do Jogador":
-            print_errors("O nome do jogador não pode ser vazio")
+            print_errors("Indique o nome do jogador")
+            return
         elif not opponent_name or opponent_name == "Nome do Oponente":
-            print_errors("O nome do oponente não pode ser vazio")
-        else:
-            global players_data
-            if players_data.get(player_name, None) is None:
-                players_data[player_name] = get_player_data(player_name)
-            if players_data.get(opponent_name, None) is None:
-                players_data[opponent_name] = get_player_data(opponent_name)
-            set_trace()
+            print_errors("Indique o nome do oponente")
+            return
+        elif not game_name or game_name == "Jogo":
+            print_errors("Indique o nome do jogo")
+            return
+        global players_data
+        if players_data.get(player_name, None) is None:
+            get_player_data(player_name)
+        if players_data.get(opponent_name, None) is None:
+            get_player_data(opponent_name)
+        
+        if player_name not in players_data or opponent_name not in players_data:
+            return
+        if game_name not in players_data[player_name]["Jogos"]:
+            print_errors(f"{player_name} não joga {game_name}")
+            return
+        elif game_name not in players_data[opponent_name]["Jogos"]:
+            print_errors(f"{opponent_name} não joga {game_name}")
+            return
+        player_game_data = players_data[player_name]["Jogos"][game_name]
+        opponent_game_data = players_data[opponent_name]["Jogos"][game_name]
+        predictions = {
+            player_name: {
+                "Pontuação atual": player_game_data["Pontuação"],
+                "Prabilidade de Vitória": self.calculate_winning_probability(player_game_data["Pontuação"], opponent_game_data["Pontuação"]),
+                **self.calculate_new_rating(player_game_data["Pontuação"], opponent_game_data["Pontuação"]),
+                "Chega aos 0 pontos em": self.calculate_days_until_zero_points(player_game_data["Pontuação"]),
+            },
+            opponent_name: {
+                "Pontuação atual": opponent_game_data["Pontuação"],
+                "Prabilidade de Vitória": self.calculate_winning_probability(opponent_game_data["Pontuação"], player_game_data["Pontuação"]),
+                **self.calculate_new_rating(opponent_game_data["Pontuação"], player_game_data["Pontuação"]),
+                "Chega aos 0 pontos em": self.calculate_days_until_zero_points(opponent_game_data["Pontuação"]),
+            },
+        }
+        display_text = ""
+        for player, data in predictions.items():
+            display_text += f"{player}:\n"
+            for key, value in data.items():
+                display_text += f"{key}: {value}\n"
+            display_text += "\n"
+        self.__dict__["children"]["!label3"].config(text=display_text)
+
+
     
     # Prof. Arpad Elo"s Formula - https://www.flyordie.com/games/help/rating_system.html
 
-    def calculate_winning_probability(self, player_rating: int, oponent_rating: int) -> int:
+    def calculate_winning_probability(self, player_rating: int, oponent_rating: int) -> str:
         rating_difference = abs(player_rating - oponent_rating)
-        result_factor = 100 * rating_difference / (player_rating - oponent_rating)
         if rating_difference >= 800:
-            return 0.99 * result_factor
+            return f"{99 if player_rating > oponent_rating else 1}%"
         elif rating_difference >= 400:
-            return 0.91 * result_factor
+            return f"{91 if player_rating > oponent_rating else 9}%"
         elif rating_difference >= 200:
-            return 0.76 * result_factor
+            return f"{76 if player_rating > oponent_rating else 24}%"
         elif rating_difference >= 100:
-            return 0.64 * result_factor
-        return 0.50 * result_factor
+            return f"{64 if player_rating > oponent_rating else 36}%"
+        return "50%"
 
     def getK(self, rating: int, games_played: int = 1) -> int:
         k = 24
@@ -209,12 +247,26 @@ class ResultSimulator(tk.Frame):
     def calculate_expected_score(self, player_rating: int, oponent_rating: int) -> float:
         return 1 / (1 + 10 ** (-abs(player_rating - oponent_rating) / 400))
 
-    def calculate_new_rating(self, old_rating: int, oponent_rating: int) -> int:
-        return {
-            "W": old_rating + self.getK(1- self.calculate_expected_score(old_rating, oponent_rating)),
-            "D": old_rating + self.getK(0.5 - self.calculate_expected_score(old_rating, oponent_rating)),
-            "L": old_rating + self.getK(0 - self.calculate_expected_score(old_rating, oponent_rating)),
+    def calculate_new_rating(self, player_rating: int, oponent_rating: int) -> int:
+        if player_rating is None or oponent_rating is None:
+            return {"Pontuação em caso de Vitória": None, "Pontuação em caso de Empate": None, "Pontuação em caso de Derrota": None}
+
+        results = {
+            "Pontuação em caso de Vitória": int(round(player_rating + self.getK(player_rating)*(1- self.calculate_expected_score(player_rating, oponent_rating)), 0)),
+            "Pontuação em caso de Empate": int(round(player_rating + self.getK(player_rating)*(0.5 - self.calculate_expected_score(player_rating, oponent_rating)), 0)),
+            "Pontuação em caso de Derrota": int(round(player_rating + self.getK(player_rating)*(0 - self.calculate_expected_score(player_rating, oponent_rating)), 0)),
         }
+        return results
+    
+    def calculate_days_until_zero_points(self, rating: int) -> str:
+        days_left = 0
+        while rating >= 0:
+            if rating <= 353:
+                rating -= 1
+            else:
+                rating -= int(round(rating**2 / 125000, 0))
+            days_left += 1
+        return f"{days_left} dias ({(datetime.today() + timedelta(days=days_left)).strftime('%d/%m/%Y')})"
 
 
 
@@ -222,7 +274,7 @@ def clear_int(value: str) -> int:
     if not value:
         return None
     try:
-        return int(value.replace(",", "").replace(",", "").replace("(", "").replace(")", ""))
+        return int(value.replace(",", "").replace(",", "").replace("(", "").replace(")", "").replace("~", ""))
     except ValueError:
         return None
 
@@ -291,13 +343,12 @@ def get_player_data(player_name: str) -> dict:
         gamedata_response = BeautifulSoup(gamedata_response.text, "html.parser")
 
         category = getattr(gamedata_response.find("div", class_="l ratingCategoryName"), "text", None)
-        rating = clear_int(getattr(gamedata_response.find("div", class_="w H"), "text", None))
+        rating = clear_int(getattr(gamedata_response.findAll("div", class_="w H")[3], "text", None))
         total_matches = clear_int(getattr(gamedata_response.find("td", class_="w matchCount"), "text", None))
         
         loss_degree, loss_tag = 0, gamedata_response.find("div", class_="pieSegmentInner lossesItem") or None
         if loss_tag:
             loss_degree = 360 - clear_float(loss_tag.parent.attrs["style"])
-        
         draw_degree, draw_tag = 0, gamedata_response.find("div", class_="pieSegmentInner drawsItem") or None
         if draw_tag:
             if loss_degree == 0:
@@ -308,7 +359,6 @@ def get_player_data(player_name: str) -> dict:
         wins = clear_int(gamedata_response.find("div", class_="w winCount H").text)
         draws = floor((draw_degree * total_matches) / 360)
         losses = floor((loss_degree * total_matches) / 360)
-
         players_data[player_name]["Jogos"][game_name]["Categoria"] = category
         players_data[player_name]["Jogos"][game_name]["Pontuação"] = rating
         players_data[player_name]["Jogos"][game_name]["Total de Partidas"] = total_matches

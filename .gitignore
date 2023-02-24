@@ -9,6 +9,7 @@
 
 # Logs
 *logs
+*.log
 
 # Rust build folders
 Rust/*/target
