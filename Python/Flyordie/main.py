@@ -10,7 +10,8 @@ from math import floor
 from time import sleep
 from logging import basicConfig, getLogger, INFO
 
-basicConfig(filename="erros.log", filemode="w", level=INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+
+basicConfig(filename="erros.log", filemode="a", level=INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", encoding="utf-8", datefmt="%d-%b-%y %H:%M:%S")
 logger = getLogger(__name__)
 
 
@@ -67,7 +68,7 @@ class Window(tk.Tk):
     def custom_window(self) -> None:
         favicon = get("https://www.flyordie.com/favicon.ico").content
         self.title("FlyorDie - Fernando Sobral")
-        self.geometry(f"{480}x{600}")
+        self.geometry(f"{480}x{500}")
         self.iconphoto(True, ImageTk.PhotoImage(Image.open(BytesIO(favicon))))
         self.minsize(380, 300)
 
@@ -110,12 +111,11 @@ class Window(tk.Tk):
             players_to_search.append(entry)
 
     def add_option_section(self, frame: tk.Frame, options: list[str], default_option: str) -> tk.OptionMenu:
-        if getattr(frame, "GAMES_PLAYED", None) is not None:
-            frame.GAMES_PLAYED = tk.StringVar(frame)
-            frame.GAMES_PLAYED.set(default_option)
-            option_menu = tk.OptionMenu(frame, frame.GAMES_PLAYED, *options)
-            option_menu.pack(side=tk.TOP, pady=5)
-            return option_menu
+        value = tk.StringVar(frame)
+        value.set(default_option)
+        option_menu = tk.OptionMenu(frame, value, *options)
+        option_menu.pack(side=tk.TOP, pady=5)
+        return option_menu
 
 
 class MainMenu(tk.Frame):
@@ -148,7 +148,7 @@ class PlayersData(tk.Frame):
         controller.add_player_input_field(self)
 
         button_back = tk.Button(self, text="Voltar", font=NORMAL_FONT, command=lambda: controller.show_frame("MainMenu"))
-        button_back.pack(side=tk.BOTTOM, pady=5)
+        button_back.pack(side=tk.BOTTOM, pady=10)
         
         export_button = tk.Button(self, text="Exportar Dados", **LIGHTBLUE_BUTTON_PROPS, command=lambda: self.export_players_data())
         export_button.pack(side=tk.BOTTOM, padx=10, pady=10)
@@ -191,7 +191,6 @@ class PlayersData(tk.Frame):
 
 class ResultSimulator(tk.Frame):
     SERIES_OF_GAMES = { 1: 16, 2: 24, 3: 28, 4: 30, 5: 31, "6+": 32 }
-    GAMES_PLAYED = 1
 
     def __init__(self, parent: tk.Frame, controller: Window):
         tk.Frame.__init__(self, parent, bg=BG_COLOR)
@@ -203,38 +202,51 @@ class ResultSimulator(tk.Frame):
         vs = tk.Label(self, text="VS", **TEXT_PROPS)
         vs.pack()
         controller.add_player_input_field(self, "Nome do Oponente")
-        controller.add_player_input_field(self, "Jogo")
-        controller.add_option_section(self, list(self.SERIES_OF_GAMES.keys()), "Número de Jogos")
-        
-        generate_button = tk.Button(self, text="Gerar Resultado", **GREEN_BUTTON_PROPS, command=lambda: self.generate_result())
-        generate_button.pack(side=tk.TOP, padx=10, pady=5)
 
         button_back = tk.Button(self, text="Voltar", font=NORMAL_FONT, command=lambda: controller.show_frame("MainMenu"))
-        button_back.pack(side=tk.BOTTOM, pady=5)
+        button_back.pack(side=tk.BOTTOM, pady=10)
+        
+        generate_button = tk.Button(self, text="Obter Dados", **LIGHTBLUE_BUTTON_PROPS, command=lambda: self.generate_common_games())
+        generate_button.pack(side=tk.BOTTOM, padx=10, pady=5)
         
         results_label = tk.Label(self, **TEXT_PROPS)
         results_label.pack(side=tk.BOTTOM, padx=10, pady=5)
 
-    def generate_result(self) -> None:
+    def generate_common_games(self) -> None:
         player_name = self.__dict__["children"]["!entry"].get().strip()
         opponent_name = self.__dict__["children"]["!entry2"].get().strip()
-        game_name = self.__dict__["children"]["!entry3"].get().strip()
-        games_played = self.GAMES_PLAYED.get()
-        games_played = 1 if games_played == "Número de Jogos" else clear_int(games_played)
         if not player_name or player_name == "Nome do Jogador":
             print_errors("Indique o nome do jogador")
             return
         elif not opponent_name or opponent_name == "Nome do Oponente":
             print_errors("Indique o nome do oponente")
             return
-        elif not game_name or game_name == "Jogo":
-            print_errors("Indique o nome do jogo")
-            return
         
         get_players_data(player_name, opponent_name)
-        
         global players_data
         if player_name not in players_data or opponent_name not in players_data:
+            return
+        common_games = list(set(players_data[player_name]["Jogos"].keys()) & set(players_data[opponent_name]["Jogos"].keys()))
+        if not common_games:
+            print_errors(f"{player_name} e {opponent_name} não jogam os mesmos jogos")
+            return
+        common_games.sort()
+
+        if not self.__dict__["children"].get("!optionmenu"): self.controller.add_option_section(self, list(self.SERIES_OF_GAMES.keys()), "Número de Jogos")
+        else: self.__dict__["children"]["!optionmenu"].pack(side=tk.TOP, pady=5)
+        if not self.__dict__["children"].get("!optionmenu2"): self.controller.add_option_section(self, common_games, "Jogo")
+        else: self.__dict__["children"]["!optionmenu2"].pack(side=tk.TOP, pady=5)
+        self.__dict__["children"]["!button"].config(command=lambda: self.reset())
+        self.__dict__["children"]["!button2"].config(**GREEN_BUTTON_PROPS, text="Gerar Resultados", command=lambda: self.generate_result(player_name, opponent_name))
+
+    def generate_result(self, player_name: str, opponent_name: str) -> None:
+        global players_data
+        games_played = self.__dict__["children"]["!optionmenu"].cget("text")
+        games_played = 1 if games_played == "Número de Jogos" else clear_int(games_played)
+        game_name = self.__dict__["children"]["!optionmenu2"].cget("text")
+
+        if game_name == "Jogo":
+            print_errors("Indique o jogo")
             return
         if game_name not in players_data[player_name]["Jogos"]:
             print_errors(f"{player_name} não joga {game_name}")
@@ -264,8 +276,16 @@ class ResultSimulator(tk.Frame):
             for key, value in data.items():
                 display_text += f"{key}: {value}\n"
             display_text += "\n"
-        self.__dict__["children"]["!label3"].config(text=display_text)
+        self.controller.geometry(f"{480}x{620}")
+        self.__dict__["children"]["!label3"].config(text=display_text[:-2])
 
+    def reset(self) -> None:
+        self.controller.geometry(f"{480}x{500}")
+        self.__dict__["children"]["!label3"].config(text="")
+        self.__dict__["children"]["!optionmenu"].pack_forget()
+        self.__dict__["children"]["!optionmenu2"].pack_forget()
+        self.__dict__["children"]["!button"].config(command=lambda: self.controller.show_frame("MainMenu"))
+        self.__dict__["children"]["!button2"].config(**LIGHTBLUE_BUTTON_PROPS, text="Obter Dados", command=lambda: self.generate_common_games())
 
     # Prof. Arpad Elo"s Formula - https://www.flyordie.com/games/help/rating_system.html
     def calculate_winning_probability(self, player_rating: int, oponent_rating: int) -> str:
@@ -296,9 +316,9 @@ class ResultSimulator(tk.Frame):
             return {"Pontuação em caso de Vitória": None, "Pontuação em caso de Empate": None, "Pontuação em caso de Derrota": None}
 
         results = {
-            "Pontuação em caso de Vitória": int(round(player_rating + self.getK(player_rating, games_played)*(1- self.calculate_expected_score(player_rating, oponent_rating)), 0)),
-            "Pontuação em caso de Empate": int(round(player_rating + self.getK(player_rating, games_played)*(0.5 - self.calculate_expected_score(player_rating, oponent_rating)), 0)),
-            "Pontuação em caso de Derrota": int(round(player_rating + self.getK(player_rating, games_played)*(0 - self.calculate_expected_score(player_rating, oponent_rating)), 0)),
+            "Pontuação em caso de Vitória": max(0, int(round(player_rating + self.getK(player_rating, games_played)*(1- self.calculate_expected_score(player_rating, oponent_rating)), 0))),
+            "Pontuação em caso de Empate": max(0, int(round(player_rating + self.getK(player_rating, games_played)*(0.5 - self.calculate_expected_score(player_rating, oponent_rating)), 0))),
+            "Pontuação em caso de Derrota": max(0, int(round(player_rating + self.getK(player_rating, games_played)*(0 - self.calculate_expected_score(player_rating, oponent_rating)), 0))),
         }
         return results
     
