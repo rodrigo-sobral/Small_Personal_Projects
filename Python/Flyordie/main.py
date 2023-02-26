@@ -24,10 +24,9 @@ TEXT_PROPS = {"bg": BG_COLOR, "fg": "white", "font": NORMAL_FONT}
 TITLE_PROPS = {"bg": BG_COLOR, "fg": "white", "font": TITLE_FONT}
 
 GREEN_BUTTON_PROPS = {"bg": "green", "fg": "white", "font": NORMAL_FONT}
+ORANGE_BUTTON_PROPS = {"bg": "orange", "fg": "black", "font": NORMAL_FONT}
 DARKRED_BUTTON_PROPS = {"bg": "darkred", "fg": "white", "font": NORMAL_FONT}
 LIGHTBLUE_BUTTON_PROPS = {"bg": "lightblue", "fg": "black", "font": NORMAL_FONT}
-
-MONTHS = {1: "janeiro", 2: "fevereiro", 3: "março", 4: "abril", 5: "maio", 6: "junho", 7: "julho", 8: "agosto", 9: "setembro", 10: "outubro", 11: "novembro", 12: "dezembro"}
 
 
 # --------------------------------------------------------------------------------------------
@@ -36,7 +35,9 @@ MONTHS = {1: "janeiro", 2: "fevereiro", 3: "março", 4: "abril", 5: "maio", 6: "
 players_data = defaultdict(lambda: {
     "Sexo": str,
     "País": str,
+    "Idade": str,
     "Estado": str,
+    "Sala": str,
     "Jogos": defaultdict(lambda: {
         "Categoria": str,
         "Pontuação": int,
@@ -48,10 +49,6 @@ players_data = defaultdict(lambda: {
 })
 
 class Window(tk.Tk):
-    ICON_URL = "https://www.flyordie.com/favicon.ico"
-    MIN_SCREEN_WIDTH, MIN_SCREEN_HEIGHT = 380, 300
-    SCREEN_WIDTH, SCREEN_HEIGHT = 480, 580
-
     def __init__(self, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
         container = tk.Frame(self)
@@ -68,20 +65,26 @@ class Window(tk.Tk):
         self.show_frame("MainMenu")
 
     def custom_window(self) -> None:
-        favicon = get(self.ICON_URL).content
+        favicon = get("https://www.flyordie.com/favicon.ico").content
         self.title("FlyorDie - Fernando Sobral")
-        self.geometry(f"{self.SCREEN_WIDTH}x{self.SCREEN_HEIGHT}")
+        self.geometry(f"{480}x{600}")
         self.iconphoto(True, ImageTk.PhotoImage(Image.open(BytesIO(favicon))))
-        self.minsize(self.MIN_SCREEN_WIDTH, self.MIN_SCREEN_HEIGHT)
+        self.minsize(380, 300)
 
     def show_frame(self, page_name: str) -> None:
         self.frames[page_name].tkraise()
 
-    def add_player_input_field(self, frame: tk.Frame, placeholder: str = "Nome do Jogador", can_delete: bool = False) -> tk.Entry:
+    def add_player_input_field(self, frame: tk.Frame, placeholder: str = "Nome do Jogador", can_delete: bool = False) -> None:
+        players_to_search = getattr(frame, "PLAYERS_TO_SEARCH", None)
+        limit_players = getattr(frame, "LIMIT_PLAYERS", None)
+        if players_to_search is not None and limit_players is not None:
+            if len(players_to_search) >= limit_players: return
+
         entry = tk.Entry(frame, fg="gray", width=20, font=NORMAL_FONT)
         entry.insert(0, placeholder)
         if can_delete is True:
             def destroy_entry():
+                players_to_search.remove(entry)
                 delete_entry_button.destroy()
                 entry.destroy()
             frame.grid_columnconfigure(63, weight=1)
@@ -102,9 +105,17 @@ class Window(tk.Tk):
         entry.pack(pady=10, padx=10)
         if can_delete is True:
             # attach the button position to the entry
-            delete_entry_button.place(x=entry.winfo_x()+entry.winfo_width()+5, y=entry.winfo_y())
             delete_entry_button.pack(padx=2)
-        return entry
+        if players_to_search is not None:
+            players_to_search.append(entry)
+
+    def add_option_section(self, frame: tk.Frame, options: list[str], default_option: str) -> tk.OptionMenu:
+        if getattr(frame, "GAMES_PLAYED", None) is not None:
+            frame.GAMES_PLAYED = tk.StringVar(frame)
+            frame.GAMES_PLAYED.set(default_option)
+            option_menu = tk.OptionMenu(frame, frame.GAMES_PLAYED, *options)
+            option_menu.pack(side=tk.TOP, pady=5)
+            return option_menu
 
 
 class MainMenu(tk.Frame):
@@ -125,28 +136,62 @@ class MainMenu(tk.Frame):
 
 
 class PlayersData(tk.Frame):
+    PLAYERS_TO_SEARCH = []
     LIMIT_PLAYERS = 4
 
     def __init__(self, parent: tk.Frame, controller: Window):
         tk.Frame.__init__(self, parent, bg=BG_COLOR)
         self.controller = controller
-        label = tk.Label(self, text="Dados dos Jogadores", **TITLE_PROPS)
-        label.pack(side=tk.TOP, pady=10)
+        title = tk.Label(self, text="Dados dos Jogadores", **TITLE_PROPS)
+        title.pack(side=tk.TOP, pady=10)
         
         controller.add_player_input_field(self)
 
         button_back = tk.Button(self, text="Voltar", font=NORMAL_FONT, command=lambda: controller.show_frame("MainMenu"))
-        button_back.pack(side=tk.BOTTOM, pady=10)
+        button_back.pack(side=tk.BOTTOM, pady=5)
         
-        export_button = tk.Button(self, text="Exportar", **LIGHTBLUE_BUTTON_PROPS, command=lambda: export_players_data(players_data))
-        export_button.pack(side=tk.BOTTOM, padx=10, pady=5)
-        
-        button_plus = tk.Button(self, text="+", **GREEN_BUTTON_PROPS, command=lambda: controller.add_player_input_field(self, can_delete=True))
+        export_button = tk.Button(self, text="Exportar Dados", **LIGHTBLUE_BUTTON_PROPS, command=lambda: self.export_players_data())
+        export_button.pack(side=tk.BOTTOM, padx=10, pady=10)
+ 
+        button_plus = tk.Button(self, text="+", **ORANGE_BUTTON_PROPS, command=lambda: controller.add_player_input_field(self, can_delete=True))
         button_plus.pack(side=tk.BOTTOM, pady=10)
+
+    def export_players_data(self) -> None:
+        players_names, file_name = [], ""
+        for player_input in self.PLAYERS_TO_SEARCH:
+            name = player_input.get().strip()
+            if name != "" and name != "Nome do Jogador":
+                players_names.append(name)
+
+        global players_data
+        get_players_data(*players_names)
+        for name in players_names:
+            if name not in players_data: return
+            file_name += name.replace(" ", "_")+"-"
+        
+        with open(file_name[:-1]+".txt", mode="w", encoding="utf-8") as file:
+            for name in players_names:
+                player_data = players_data[name]
+                file.write(f"Jogador: {name}\n")
+                for data, value in player_data.items():
+                    if data != "Jogos":
+                        file.write(f"  {data}: {value}\n")
+                    else:
+                        file.write(f"  {data}:\n")
+                        for game_name, game_data in value.items():
+                            file.write(f"\t{game_name}:\n")
+                            for game_data_name, game_data_value in game_data.items():
+                                if game_data_name in ("Vitórias", "Empates", "Derrotas"):
+                                    file.write(f"\t  {game_data_name}: {game_data_value['Total']}, {game_data_value['Percentagem']}%\n")
+                                else:
+                                    file.write(f"\t  {game_data_name}: {game_data_value}\n")
+                file.write("\n")
+        messagebox.showwarning("Exportação Dados", "Dados exportados com sucesso!")
 
 
 class ResultSimulator(tk.Frame):
     SERIES_OF_GAMES = { 1: 16, 2: 24, 3: 28, 4: 30, 5: 31, "6+": 32 }
+    GAMES_PLAYED = 1
 
     def __init__(self, parent: tk.Frame, controller: Window):
         tk.Frame.__init__(self, parent, bg=BG_COLOR)
@@ -159,12 +204,13 @@ class ResultSimulator(tk.Frame):
         vs.pack()
         controller.add_player_input_field(self, "Nome do Oponente")
         controller.add_player_input_field(self, "Jogo")
+        controller.add_option_section(self, list(self.SERIES_OF_GAMES.keys()), "Número de Jogos")
         
         generate_button = tk.Button(self, text="Gerar Resultado", **GREEN_BUTTON_PROPS, command=lambda: self.generate_result())
         generate_button.pack(side=tk.TOP, padx=10, pady=5)
 
         button_back = tk.Button(self, text="Voltar", font=NORMAL_FONT, command=lambda: controller.show_frame("MainMenu"))
-        button_back.pack(side=tk.BOTTOM, pady=10)
+        button_back.pack(side=tk.BOTTOM, pady=5)
         
         results_label = tk.Label(self, **TEXT_PROPS)
         results_label.pack(side=tk.BOTTOM, padx=10, pady=5)
@@ -173,6 +219,8 @@ class ResultSimulator(tk.Frame):
         player_name = self.__dict__["children"]["!entry"].get().strip()
         opponent_name = self.__dict__["children"]["!entry2"].get().strip()
         game_name = self.__dict__["children"]["!entry3"].get().strip()
+        games_played = self.GAMES_PLAYED.get()
+        games_played = 1 if games_played == "Número de Jogos" else clear_int(games_played)
         if not player_name or player_name == "Nome do Jogador":
             print_errors("Indique o nome do jogador")
             return
@@ -182,12 +230,10 @@ class ResultSimulator(tk.Frame):
         elif not game_name or game_name == "Jogo":
             print_errors("Indique o nome do jogo")
             return
-        global players_data
-        if players_data.get(player_name, None) is None:
-            get_player_data(player_name)
-        if players_data.get(opponent_name, None) is None:
-            get_player_data(opponent_name)
         
+        get_players_data(player_name, opponent_name)
+        
+        global players_data
         if player_name not in players_data or opponent_name not in players_data:
             return
         if game_name not in players_data[player_name]["Jogos"]:
@@ -201,14 +247,14 @@ class ResultSimulator(tk.Frame):
         predictions = {
             player_name: {
                 "Pontuação atual": player_game_data["Pontuação"],
-                "Prabilidade de Vitória": self.calculate_winning_probability(player_game_data["Pontuação"], opponent_game_data["Pontuação"]),
-                **self.calculate_new_rating(player_game_data["Pontuação"], opponent_game_data["Pontuação"]),
+                "Probabilidade de Vitória": self.calculate_winning_probability(player_game_data["Pontuação"], opponent_game_data["Pontuação"]),
+                **self.calculate_new_rating(player_game_data["Pontuação"], opponent_game_data["Pontuação"], games_played),
                 "Chega aos 0 pontos em": self.calculate_days_until_zero_points(player_game_data["Pontuação"]),
             },
             opponent_name: {
                 "Pontuação atual": opponent_game_data["Pontuação"],
-                "Prabilidade de Vitória": self.calculate_winning_probability(opponent_game_data["Pontuação"], player_game_data["Pontuação"]),
-                **self.calculate_new_rating(opponent_game_data["Pontuação"], player_game_data["Pontuação"]),
+                "Probabilidade de Vitória": self.calculate_winning_probability(opponent_game_data["Pontuação"], player_game_data["Pontuação"]),
+                **self.calculate_new_rating(opponent_game_data["Pontuação"], player_game_data["Pontuação"], games_played),
                 "Chega aos 0 pontos em": self.calculate_days_until_zero_points(opponent_game_data["Pontuação"]),
             },
         }
@@ -221,9 +267,7 @@ class ResultSimulator(tk.Frame):
         self.__dict__["children"]["!label3"].config(text=display_text)
 
 
-    
     # Prof. Arpad Elo"s Formula - https://www.flyordie.com/games/help/rating_system.html
-
     def calculate_winning_probability(self, player_rating: int, oponent_rating: int) -> str:
         rating_difference = abs(player_rating - oponent_rating)
         if rating_difference >= 800:
@@ -247,24 +291,21 @@ class ResultSimulator(tk.Frame):
     def calculate_expected_score(self, player_rating: int, oponent_rating: int) -> float:
         return 1 / (1 + 10 ** (-abs(player_rating - oponent_rating) / 400))
 
-    def calculate_new_rating(self, player_rating: int, oponent_rating: int) -> int:
+    def calculate_new_rating(self, player_rating: int, oponent_rating: int, games_played: int = 1) -> int:
         if player_rating is None or oponent_rating is None:
             return {"Pontuação em caso de Vitória": None, "Pontuação em caso de Empate": None, "Pontuação em caso de Derrota": None}
 
         results = {
-            "Pontuação em caso de Vitória": int(round(player_rating + self.getK(player_rating)*(1- self.calculate_expected_score(player_rating, oponent_rating)), 0)),
-            "Pontuação em caso de Empate": int(round(player_rating + self.getK(player_rating)*(0.5 - self.calculate_expected_score(player_rating, oponent_rating)), 0)),
-            "Pontuação em caso de Derrota": int(round(player_rating + self.getK(player_rating)*(0 - self.calculate_expected_score(player_rating, oponent_rating)), 0)),
+            "Pontuação em caso de Vitória": int(round(player_rating + self.getK(player_rating, games_played)*(1- self.calculate_expected_score(player_rating, oponent_rating)), 0)),
+            "Pontuação em caso de Empate": int(round(player_rating + self.getK(player_rating, games_played)*(0.5 - self.calculate_expected_score(player_rating, oponent_rating)), 0)),
+            "Pontuação em caso de Derrota": int(round(player_rating + self.getK(player_rating, games_played)*(0 - self.calculate_expected_score(player_rating, oponent_rating)), 0)),
         }
         return results
     
     def calculate_days_until_zero_points(self, rating: int) -> str:
         days_left = 0
         while rating >= 0:
-            if rating <= 353:
-                rating -= 1
-            else:
-                rating -= int(round(rating**2 / 125000, 0))
+            rating -= 1 if rating <= 353 else int(round(rating**2 / 125000, 0))
             days_left += 1
         return f"{days_left} dias ({(datetime.today() + timedelta(days=days_left)).strftime('%d/%m/%Y')})"
 
@@ -274,7 +315,7 @@ def clear_int(value: str) -> int:
     if not value:
         return None
     try:
-        return int(value.replace(",", "").replace(",", "").replace("(", "").replace(")", "").replace("~", ""))
+        return int(value.replace(",", "").replace(",", "").replace("(", "").replace(")", "").replace("~", "").replace("+", ""))
     except ValueError:
         return None
 
@@ -284,32 +325,13 @@ def clear_float(value: str) -> float:
     except ValueError:
         return None
 
-
-def export_players_data(players_results: dict, export: bool = False) -> None:
-    file_result = None
-    if export is True:
-        file_name = ""
-        for player_name in players_results.keys():
-            file_name += player_name.replace(" ", "_")+"-"
-        file_name = file_name[:-1] + ".txt"
-        file_result = open(file_name, mode="w", encoding="utf-8")
-    for player, player_games in players_results.items():
-        print(f"Jogador: {player}\n", file=file_result)
-        for game, game_results in player_games.items():
-            print(f"  Jogo: {game}:", file=file_result)
-            for result, counter in game_results.items():
-                print(f"    {result} - {counter}", file=file_result)
-        print("\n", file=file_result)
-    if export is True:
-        file_result.close()
-
 def print_errors(display_message: str, error_message: str = "") -> None:
     global logger
     logger.error(f"{error_message} | {error_message}")
     messagebox.showerror("Erro", display_message)
 
 
-def get_player_data(player_name: str) -> dict:
+def get_player_data(players_data: dict, player_name: str) -> None:
     gamelist_response = get(f"https://games.flyordie.com/players/{player_name}")
     if gamelist_response.status_code != 200:
         print_errors(f"Erro ao obter dados acerca do jogador {player_name}", f"{gamelist_response.status_code}-{gamelist_response.url}")
@@ -321,14 +343,16 @@ def get_player_data(player_name: str) -> dict:
         print_errors(f"Erro ao ler a lista de jogos do jogador {player_name}")
         return
 
-    global players_data
     possible_status_references = (
         gamelist_response.find("div", class_="w currently-online-caption H"),
-        gamelist_response.findAll("div", class_="w H")[2],
+        gamelist_response.findAll("div", class_="w H"),
     )
     players_data[player_name]["Sexo"] = getattr(gamelist_response.find("div", class_="w gender H"), "text", None)
+    players_data[player_name]["Idade"] = getattr(gamelist_response.find("div", class_="w age H"), "text", None)
+    players_data[player_name]["Sala"] = getattr(gamelist_response.find("div", class_="w current-room-caption H"), "text", None)
     players_data[player_name]["País"] = getattr(gamelist_response.find("div", class_="w c-l H"), "text", None)
     for ref in possible_status_references:
+        ref = ref[2] if isinstance(ref, list) else ref
         players_data[player_name]["Estado"] = getattr(ref, "text", None)
         if players_data[player_name]["Estado"]: break
 
@@ -338,10 +362,9 @@ def get_player_data(player_name: str) -> dict:
         gamedata_response = get(f"https://games.flyordie.com/players/{player_name}/{game_name}")
         if gamedata_response.status_code != 200:
             print_errors(f"Erro ao obter os dados do jogo {game_name} do jogador {player_name}", f"{gamedata_response.status_code}-{gamedata_response.url}")
-            continue
+            return
         
         gamedata_response = BeautifulSoup(gamedata_response.text, "html.parser")
-
         category = getattr(gamedata_response.find("div", class_="l ratingCategoryName"), "text", None)
         rating = clear_int(getattr(gamedata_response.findAll("div", class_="w H")[3], "text", None))
         total_matches = clear_int(getattr(gamedata_response.find("td", class_="w matchCount"), "text", None))
@@ -369,6 +392,13 @@ def get_player_data(player_name: str) -> dict:
         players_data[player_name]["Jogos"][game_name]["Empates"]["Percentagem"] = round(draws / total_matches * 100, 2)
         players_data[player_name]["Jogos"][game_name]["Derrotas"]["Percentagem"] = round(losses / total_matches * 100, 2)
 
+
+def get_players_data(*players_names: str) -> bool:
+    if players_names:
+        global players_data
+        for name in players_names:
+            if name not in players_data:
+                get_player_data(players_data, name)
 
 if __name__ == "__main__":
     Window().mainloop()
