@@ -1,0 +1,183 @@
+# docker-compose.yml
+x-defaults: &defaults
+  restart: unless-stopped
+  logging:
+    driver: "json-file"
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+networks:
+  web:
+    driver: bridge
+  wgnet:
+    driver: bridge
+
+volumes:
+  pgdata:
+  vaultwarden-data:
+  caddy_data:
+  caddy_config:
+  wireguard_config:
+
+secrets:
+  # Create these with: echo "value" | docker secret create <name> -
+  pg_password:
+    external: true
+  vaultwarden_admin_token:
+    external: true
+  vaultwarden_jwt_secret:
+    external: true
+  caddy_api_token:
+    external: true
+
+services:
+  db:
+    <<: *defaults
+    image: postgres:15-alpine
+    container_name: vaultwarden_db
+    environment:
+      - POSTGRES_USER=vaultwarden
+      - POSTGRES_DB=vaultwarden
+      - POSTGRES_PASSWORD_FILE=/run/secrets/pg_password
+    secrets:
+      - pg_password
+    volumes:
+      - pgdata:/var/lib/postgresql/data:rw
+    networks:
+      - web
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vaultwarden -d vaultwarden"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M
+
+  vaultwarden:
+    <<: *defaults
+    image: vaultwarden/server:latest
+    restart: unless-stopped
+    container_name: vaultwarden
+    depends_on:
+      - db
+    environment:
+      # Vaultwarden config
+      - DATABASE_URL=postgresql://vaultwarden:$(cat /run/secrets/pg_password 2>/dev/null || echo "REPLACE_WITH_SECRET")@db:5432/vaultwarden
+      - ROCKET_ADDRESS=0.0.0.0
+      - ROCKET_WORKERS=4
+      - SIGNUPS_ALLOWED=false
+      - LOG_FILE=/data/vaultwarden.log
+      # Sensitive values via secrets
+      - ADMIN_TOKEN_FILE=/run/secrets/vaultwarden_admin_token
+      - JWT_SECRET_FILE=/run/secrets/vaultwarden_jwt_secret
+      - WEBSOCKET_ENABLED=true
+    secrets:
+      - vaultwarden_admin_token
+      - vaultwarden_jwt_secret
+      - pg_password    # used only for the compose template above; keep for completeness
+    volumes:
+      - vaultwarden-data:/data:rw
+      - ./vw-data:/data
+    expose:
+      - 80
+    labels:
+      - "traefik.enable=false"
+    networks:
+      - web
+    ports:
+      - "127.0.0.1:8080:80" # bind to localhost - only reachable via reverse proxy (Caddy) or via VPN
+    read_only: false
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN          # minimal caps; container image may require basic ones
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS --fail http://127.0.0.1:80/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 512M
+
+  caddy:
+    <<: *defaults
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: unless-stopped
+    depends_on:
+      - vaultwarden
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    environment:
+      - CADDY_API_TOKEN_FILE=/run/secrets/caddy_api_token
+    secrets:
+      - caddy_api_token
+    ports:
+      - "80:80"    # HTTP -> redirect
+      - "443:443"  # HTTPS
+    networks:
+      - web
+    read_only: false
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD-SHELL", "caddy validate --config /etc/caddy/Caddyfile || exit 1"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+
+  wireguard:
+    <<: *defaults
+    image: linuxserver/wireguard
+    container_name: wireguard
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Lisbon
+      # Optionally limit allowed interfaces / set internal subnet:
+      - SERVERURL=your-vpn.example.com  # public DNS or public IP used in client configs
+      - SERVERPORT=51820
+      - PEERS=1
+      - PEERDNS=1.1.1.1
+      - INTERNAL_SUBNET=10.13.13.0
+    volumes:
+      - wireguard_config:/config
+    ports:
+      - "51820:51820/udp"
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+    networks:
+      - wgnet
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /config/peer_1/peer_1.conf || exit 1"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 128M

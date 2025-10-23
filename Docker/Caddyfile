@@ -1,0 +1,17 @@
+# Caddyfile
+vault.example.com {
+    reverse_proxy vaultwarden:80
+    encode zstd gzip
+    log {
+      output file /data/vaultwarden_access.log
+      format json
+    }
+    # Optional security headers
+    header {
+      Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+      X-Content-Type-Options "nosniff"
+      X-Frame-Options "DENY"
+      Referrer-Policy "no-referrer"
+      Content-Security-Policy "default-src 'none'; frame-ancestors 'none';"
+    }
+}
