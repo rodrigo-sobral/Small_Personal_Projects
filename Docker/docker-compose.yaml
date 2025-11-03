@@ -9,27 +9,15 @@ x-defaults: &defaults
 
 networks:
   web:
-    driver: bridge
-  wgnet:
-    driver: bridge
+  vpn:
 
 volumes:
-  pgdata:
-  vaultwarden-data:
+  postgres_data:
+  vaultwarden_data:
   caddy_data:
   caddy_config:
   wireguard_config:
-
-secrets:
-  # Create these with: echo "value" | docker secret create <name> -
-  pg_password:
-    external: true
-  vaultwarden_admin_token:
-    external: true
-  vaultwarden_jwt_secret:
-    external: true
-  caddy_api_token:
-    external: true
+  octoprint_data:
 
 services:
   db:
@@ -37,17 +25,15 @@ services:
     image: postgres:15-alpine
     container_name: vaultwarden_db
     environment:
-      - POSTGRES_USER=vaultwarden
-      - POSTGRES_DB=vaultwarden
-      - POSTGRES_PASSWORD_FILE=/run/secrets/pg_password
-    secrets:
-      - pg_password
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+      POSTGRES_DB: vaultwarden
     volumes:
-      - pgdata:/var/lib/postgresql/data:rw
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - web
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U vaultwarden -d vaultwarden"]
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER} -d vaultwarden"]
       interval: 30s
       timeout: 5s
       retries: 5
@@ -55,33 +41,24 @@ services:
       resources:
         limits:
           cpus: "0.50"
-          memory: 256M
 
   vaultwarden:
     <<: *defaults
     image: vaultwarden/server:latest
-    restart: unless-stopped
     container_name: vaultwarden
     depends_on:
       - db
     environment:
-      # Vaultwarden config
-      - DATABASE_URL=postgresql://vaultwarden:$(cat /run/secrets/pg_password 2>/dev/null || echo "REPLACE_WITH_SECRET")@db:5432/vaultwarden
-      - ROCKET_ADDRESS=0.0.0.0
-      - ROCKET_WORKERS=4
-      - SIGNUPS_ALLOWED=false
-      - LOG_FILE=/data/vaultwarden.log
-      # Sensitive values via secrets
-      - ADMIN_TOKEN_FILE=/run/secrets/vaultwarden_admin_token
-      - JWT_SECRET_FILE=/run/secrets/vaultwarden_jwt_secret
-      - WEBSOCKET_ENABLED=true
-    secrets:
-      - vaultwarden_admin_token
-      - vaultwarden_jwt_secret
-      - pg_password    # used only for the compose template above; keep for completeness
+      DATABASE_URL: postgresql://${PG_USER}:${PG_PASSWORD}@db:5432/vaultwarden
+      ROCKET_ADDRESS: 0.0.0.0
+      ROCKET_WORKERS: 4
+      SIGNUPS_ALLOWED: false
+      DOMAIN: "https://vaultwarden.home.local"
+      ADMIN_TOKEN: ${VAULTWARDEN_ADMIN_TOKEN}
+      JWT_SECRET: ${VAULTWARDEN_JWT_SECRET}
+      LOG_FILE: /data/vaultwarden.log
     volumes:
-      - vaultwarden-data:/data:rw
-      - ./vw-data:/data
+      - vaultwarden_data:/data
     expose:
       - 80
     labels:
@@ -89,14 +66,14 @@ services:
     networks:
       - web
     ports:
-      - "127.0.0.1:8080:80" # bind to localhost - only reachable via reverse proxy (Caddy) or via VPN
+      - "127.0.0.1:8080:80"
     read_only: false
     tmpfs:
       - /tmp
     cap_drop:
       - ALL
     cap_add:
-      - CHOWN          # minimal caps; container image may require basic ones
+      - CHOWN
     security_opt:
       - no-new-privileges:true
     healthcheck:
@@ -108,13 +85,11 @@ services:
       resources:
         limits:
           cpus: "1.00"
-          memory: 512M
 
   caddy:
     <<: *defaults
     image: caddy:2-alpine
     container_name: caddy
-    restart: unless-stopped
     depends_on:
       - vaultwarden
     volumes:
@@ -122,12 +97,11 @@ services:
       - caddy_config:/config
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
     environment:
+      - TZ=${TZ}
       - CADDY_API_TOKEN_FILE=/run/secrets/caddy_api_token
-    secrets:
-      - caddy_api_token
     ports:
-      - "80:80"    # HTTP -> redirect
-      - "443:443"  # HTTPS
+      - "80:80"
+      - "443:443"
     networks:
       - web
     read_only: false
@@ -153,26 +127,24 @@ services:
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Europe/Lisbon
-      # Optionally limit allowed interfaces / set internal subnet:
-      - SERVERURL=your-vpn.example.com  # public DNS or public IP used in client configs
-      - SERVERPORT=51820
-      - PEERS=1
+      - TZ=${TZ}
+      - SERVERURL=${WG_SERVERURL}
+      - SERVERPORT=${WG_SERVERPORT}
+      - PEERS=${WG_PEERS}
       - PEERDNS=1.1.1.1
       - INTERNAL_SUBNET=10.13.13.0
     volumes:
       - wireguard_config:/config
     ports:
-      - "51820:51820/udp"
+      - "${WG_SERVERPORT}:${WG_SERVERPORT}/udp"
     sysctls:
       - net.ipv4.conf.all.src_valid_mark=1
     networks:
-      - wgnet
+      - vpn
     security_opt:
       - no-new-privileges:true
-    restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "test -f /config/peer_1/peer_1.conf || exit 1"]
+      test: ["CMD-SHELL", "wg show || exit 1"]
       interval: 1m
       timeout: 10s
       retries: 3
@@ -180,4 +152,49 @@ services:
       resources:
         limits:
           cpus: "0.50"
-          memory: 128M
+
+  wireguard-mailer:
+    image: python:3.12-alpine
+    container_name: wireguard_mailer
+    depends_on:
+      wireguard:
+        condition: service_healthy
+    environment:
+      WG_PEERS: ${WG_PEERS}
+      WG_PEERS_EMAILS: ${WG_PEERS_EMAILS}
+      SMTP_SERVER: ${SMTP_SERVER}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      FROM_EMAIL: ${FROM_EMAIL}
+    volumes:
+      - wireguard_config:/config:ro
+      - ./python:/python
+    command: sh -c "pip install qrcode[pil] yagmail && python /python/wireguard_mailer.py"
+    restart: "no"
+
+  octoprint:
+    <<: *defaults
+    image: octoprint/octoprint:latest
+    container_name: octoprint
+    environment:
+      TZ: ${TZ}
+      OCTOPRINT_USER: ${OCTOPRINT_USER}
+      OCTOPRINT_PASS: ${OCTOPRINT_PASS}
+    volumes:
+      - octoprint_data:/home/octoprint/.octoprint
+    ports:
+      - "5000:5000"
+    networks:
+      - web
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS --fail http://127.0.0.1:5000/health || exit 1"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+    expose:
+      - 5000
