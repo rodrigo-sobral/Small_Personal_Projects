@@ -166,11 +166,10 @@ services:
       SMTP_PORT: ${SMTP_PORT}
       SMTP_USER: ${SMTP_USER}
       SMTP_PASS: ${SMTP_PASS}
-      FROM_EMAIL: ${FROM_EMAIL}
     volumes:
       - wireguard_config:/config:ro
       - ./python:/python
-    command: sh -c "pip install qrcode[pil] yagmail && python /python/wireguard_mailer.py"
+    command: sh -c "pip install qrcode[pil] yagmail dotenv && python /python/wireguard_mailer.py"
     restart: "no"
 
   octoprint:
