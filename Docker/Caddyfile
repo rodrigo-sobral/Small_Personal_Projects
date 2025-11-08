@@ -1,7 +1,8 @@
-# Caddyfile
-vault.example.com {
+# Local development Caddyfile
+raspi {
+    tls internal
     reverse_proxy vaultwarden:80
-    encode zstd gzip
+    encode gzip
     log {
       output file /data/vaultwarden_access.log
       format json
