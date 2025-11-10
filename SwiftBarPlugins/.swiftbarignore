@@ -1,0 +1,3 @@
+scripts/*
+.env.example
+README.md

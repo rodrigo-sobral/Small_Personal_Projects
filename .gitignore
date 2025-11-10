@@ -16,3 +16,4 @@ Rust/*/target
 
 # Others
 Python/Flyordie/test.py
+.DS_Store
